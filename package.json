@@ -33,7 +33,7 @@
   "n8n": {
     "n8nNodesApiVersion": 1,
     "credentials": [
-      "dist/credentials/TaskPano.credentials.js"
+      "dist/credentials/TaskPanoApi.credentials.js"
     ],
     "nodes": [
       "dist/nodes/TaskPano/TaskPano.node.js"
