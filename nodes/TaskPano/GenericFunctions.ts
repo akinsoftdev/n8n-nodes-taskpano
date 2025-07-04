@@ -24,3 +24,39 @@ export async function taskPanoApiRequest(
 
 	return this.helpers.requestWithAuthentication.call(this, 'taskPanoApi', options);
 }
+
+export async function taskPanoApiRequestAllItems(
+	this: IExecuteFunctions | ILoadOptionsFunctions,
+	endpoint: string,
+	propertyName: string,
+	body: IDataObject = {},
+	qs: IDataObject = {},
+): Promise<IDataObject[]> {
+	const returnData: IDataObject[] = [];
+
+	let page = 1;
+	let hasNextPage: string | null = null;
+
+	do {
+		const response = await taskPanoApiRequest.call(
+			this,
+			'GET',
+			endpoint,
+			body,
+			{ ...qs, page, limit: 250 },
+		);
+
+		const container = response.data?.[propertyName] ?? {};
+		const segment = container?.data ?? container;
+
+		if (Array.isArray(segment)) {
+			returnData.push(...segment);
+		}
+
+		hasNextPage = container?.next_page_url ?? null;
+
+		page++;
+	} while (hasNextPage);
+
+	return returnData;
+}

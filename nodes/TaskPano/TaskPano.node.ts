@@ -9,7 +9,7 @@ import {
 	NodeConnectionType,
 	NodeOperationError,
 } from 'n8n-workflow';
-import { taskPanoApiRequest } from './GenericFunctions';
+import { taskPanoApiRequest, taskPanoApiRequestAllItems } from './GenericFunctions';
 
 export class TaskPano implements INodeType {
 	description: INodeTypeDescription = {
@@ -64,6 +64,12 @@ export class TaskPano implements INodeType {
 						description: 'Create a new task',
 						action: 'Create a task',
 					},
+					{
+						name: 'Create Subtask',
+						value: 'createSubtask',
+						description: 'Create a new subtask',
+						action: 'Create a subtask',
+					},
 				],
 				default: 'create',
 				noDataExpression: true,
@@ -74,7 +80,7 @@ export class TaskPano implements INodeType {
 				type: 'options',
 				displayOptions: {
 					show: {
-						operation: ['create'],
+						operation: ['create', 'createSubtask'],
 						resource: ['task'],
 					},
 				},
@@ -104,6 +110,24 @@ export class TaskPano implements INodeType {
 				description: 'The project to create the task in. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 			},
 			{
+				displayName: 'Project Name or ID',
+				name: 'projectNumericId',
+				type: 'options',
+				required: true,
+				displayOptions: {
+					show: {
+						operation: ['createSubtask'],
+						resource: ['task'],
+					},
+				},
+				typeOptions: {
+					loadOptionsMethod: 'getProjectsNumeric',
+					loadOptionsDependsOn: ['organizationId'],
+				},
+				default: '',
+				description: 'Select the project by its numeric ID for subtask creation. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+			},
+			{
 				displayName: 'List Name or ID',
 				name: 'listId',
 				type: 'options',
@@ -122,13 +146,31 @@ export class TaskPano implements INodeType {
 				description: 'The list to create the task in. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 			},
 			{
+				displayName: 'Parent Task Name or ID',
+				name: 'parentTaskId',
+				type: 'options',
+				required: true,
+				displayOptions: {
+					show: {
+						operation: ['createSubtask'],
+						resource: ['task'],
+					},
+				},
+				typeOptions: {
+					loadOptionsMethod: 'getTasks',
+					loadOptionsDependsOn: ['projectNumericId'],
+				},
+				default: '',
+				description: 'Select the parent task. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+			},
+			{
 				displayName: 'Task Name',
 				name: 'name',
 				type: 'string',
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['create'],
+						operation: ['create', 'createSubtask'],
 						resource: ['task'],
 					},
 				},
@@ -186,6 +228,33 @@ export class TaskPano implements INodeType {
 				}
 			},
 
+			async getProjectsNumeric(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const organizationId = this.getCurrentNodeParameter('organizationId');
+
+				if (!organizationId) {
+					return [];
+				}
+
+				try {
+					const response = await taskPanoApiRequest.call(
+						this,
+						'GET',
+						`/organizations/${organizationId}/projects`,
+						{},
+						{ folder_id: -1 },
+					);
+
+					const projects = response.data?.projects || [];
+
+					return projects.map((project: IDataObject) => ({
+						name: project.name as string,
+						value: project.id as string,
+					}));
+				} catch (error) {
+					throw new NodeOperationError(this.getNode(), `Failed to load projects: ${error.message}`);
+				}
+			},
+
 			async getLists(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const projectId = this.getCurrentNodeParameter('projectId');
 
@@ -206,16 +275,36 @@ export class TaskPano implements INodeType {
 					throw new NodeOperationError(this.getNode(), `Failed to load lists: ${error.message}`);
 				}
 			},
+
+			async getTasks(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const projectId = this.getCurrentNodeParameter('projectNumericId');
+
+				if (!projectId) {
+					return [];
+				}
+
+				try {
+					const tasks = await taskPanoApiRequestAllItems.call(this, '/tasks', 'tasks', {}, { project_id: projectId });
+
+					return tasks.map((task: IDataObject) => ({
+						name: task.subject as string,
+						value: task.id_hash as string,
+					}));
+				} catch (error) {
+					throw new NodeOperationError(this.getNode(), `Failed to load tasks: ${error.message}`);
+				}
+			},
 		},
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
 		const returnData: INodeExecutionData[] = [];
-		const resource = this.getNodeParameter('resource', 0) as string;
-		const operation = this.getNodeParameter('operation', 0) as string;
 
 		for (let i = 0; i < items.length; i++) {
+			const operation = this.getNodeParameter('operation', i) as string;
+			const resource = this.getNodeParameter('resource', i) as string;
+
 			try {
 				if (resource === 'task') {
 					if (operation === 'create') {
@@ -228,6 +317,24 @@ export class TaskPano implements INodeType {
 						};
 
 						const responseData = await taskPanoApiRequest.call(this, 'POST', '/tasks', body);
+
+						returnData.push({
+							json: responseData,
+							pairedItem: {
+								item: i,
+							},
+						});
+					}
+
+					if (operation === 'createSubtask') {
+						const parentTaskId = this.getNodeParameter('parentTaskId', i) as string;
+						const name = this.getNodeParameter('name', i) as string;
+
+						const body: IDataObject = {
+							subject: name,
+						};
+
+						const responseData = await taskPanoApiRequest.call(this, 'POST', `/tasks/${parentTaskId}/subtasks`, body);
 
 						returnData.push({
 							json: responseData,
