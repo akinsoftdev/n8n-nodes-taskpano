@@ -71,6 +71,12 @@ export class TaskPano implements INodeType {
 						action: 'Create a subtask',
 					},
 					{
+						name: 'Add Checklist Item',
+						value: 'addChecklistItem',
+						description: 'Add a checklist item to a task',
+						action: 'Add a checklist item',
+					},
+					{
 						name: 'Add Comment',
 						value: 'addComment',
 						description: 'Add a comment to a task',
@@ -86,7 +92,12 @@ export class TaskPano implements INodeType {
 				type: 'options',
 				displayOptions: {
 					show: {
-						operation: ['create', 'createSubtask', 'addComment'],
+						operation: [
+							'create',
+							'createSubtask',
+							'addChecklistItem',
+							'addComment',
+						],
 						resource: ['task'],
 					},
 				},
@@ -122,7 +133,11 @@ export class TaskPano implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['createSubtask', 'addComment'],
+						operation: [
+							'createSubtask',
+							'addChecklistItem',
+							'addComment',
+						],
 						resource: ['task'],
 					},
 				},
@@ -176,7 +191,10 @@ export class TaskPano implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['addComment'],
+						operation: [
+							'addChecklistItem',
+							'addComment',
+						],
 						resource: ['task'],
 					},
 				},
@@ -201,6 +219,24 @@ export class TaskPano implements INodeType {
 				default: '',
 				placeholder: 'e.g., Implement user authentication',
 				description: 'The name/subject of the task to create',
+			},
+			{
+				displayName: 'Checklist Item',
+				name: 'checklistItem',
+				type: 'string',
+				required: true,
+				typeOptions: {
+					rows: 3,
+				},
+				displayOptions: {
+					show: {
+						operation: ['addChecklistItem'],
+						resource: ['task'],
+					},
+				},
+				default: '',
+				placeholder: 'e.g., Complete test cases',
+				description: 'The checklist item to add to the task',
 			},
 			{
 				displayName: 'Comment',
@@ -377,6 +413,24 @@ export class TaskPano implements INodeType {
 						};
 
 						const responseData = await taskPanoApiRequest.call(this, 'POST', `/tasks/${parentTaskId}/subtasks`, body);
+
+						returnData.push({
+							json: responseData,
+							pairedItem: {
+								item: i,
+							},
+						});
+					}
+
+					if (operation === 'addChecklistItem') {
+						const taskId = this.getNodeParameter('taskId', i) as string;
+						const checklistItem = this.getNodeParameter('checklistItem', i) as string;
+
+						const body: IDataObject = {
+							subject: checklistItem,
+						};
+
+						const responseData = await taskPanoApiRequest.call(this, 'POST', `/tasks/${taskId}/checklists`, body);
 
 						returnData.push({
 							json: responseData,
