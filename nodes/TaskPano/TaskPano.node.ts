@@ -70,6 +70,12 @@ export class TaskPano implements INodeType {
 						description: 'Create a new subtask',
 						action: 'Create a subtask',
 					},
+					{
+						name: 'Add Comment',
+						value: 'addComment',
+						description: 'Add a comment to a task',
+						action: 'Add a comment',
+					},
 				],
 				default: 'create',
 				noDataExpression: true,
@@ -80,7 +86,7 @@ export class TaskPano implements INodeType {
 				type: 'options',
 				displayOptions: {
 					show: {
-						operation: ['create', 'createSubtask'],
+						operation: ['create', 'createSubtask', 'addComment'],
 						resource: ['task'],
 					},
 				},
@@ -116,7 +122,7 @@ export class TaskPano implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['createSubtask'],
+						operation: ['createSubtask', 'addComment'],
 						resource: ['task'],
 					},
 				},
@@ -164,6 +170,24 @@ export class TaskPano implements INodeType {
 				description: 'Select the parent task. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 			},
 			{
+				displayName: 'Task Name or ID',
+				name: 'taskId',
+				type: 'options',
+				required: true,
+				displayOptions: {
+					show: {
+						operation: ['addComment'],
+						resource: ['task'],
+					},
+				},
+				typeOptions: {
+					loadOptionsMethod: 'getTasks',
+					loadOptionsDependsOn: ['projectNumericId'],
+				},
+				default: '',
+				description: 'Select the task to add the comment to. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+			},
+			{
 				displayName: 'Task Name',
 				name: 'name',
 				type: 'string',
@@ -177,6 +201,24 @@ export class TaskPano implements INodeType {
 				default: '',
 				placeholder: 'e.g., Implement user authentication',
 				description: 'The name/subject of the task to create',
+			},
+			{
+				displayName: 'Comment',
+				name: 'comment',
+				type: 'string',
+				required: true,
+				typeOptions: {
+					rows: 3,
+				},
+				displayOptions: {
+					show: {
+						operation: ['addComment'],
+						resource: ['task'],
+					},
+				},
+				default: '',
+				placeholder: 'e.g., This is a comment',
+				description: 'The comment to add to the task',
 			},
 		],
 	};
@@ -302,8 +344,8 @@ export class TaskPano implements INodeType {
 		const returnData: INodeExecutionData[] = [];
 
 		for (let i = 0; i < items.length; i++) {
-			const operation = this.getNodeParameter('operation', i) as string;
 			const resource = this.getNodeParameter('resource', i) as string;
+			const operation = this.getNodeParameter('operation', i) as string;
 
 			try {
 				if (resource === 'task') {
@@ -335,6 +377,24 @@ export class TaskPano implements INodeType {
 						};
 
 						const responseData = await taskPanoApiRequest.call(this, 'POST', `/tasks/${parentTaskId}/subtasks`, body);
+
+						returnData.push({
+							json: responseData,
+							pairedItem: {
+								item: i,
+							},
+						});
+					}
+
+					if (operation === 'addComment') {
+						const taskId = this.getNodeParameter('taskId', i) as string;
+						const comment = this.getNodeParameter('comment', i) as string;
+
+						const body: IDataObject = {
+							comment: comment,
+						};
+
+						const responseData = await taskPanoApiRequest.call(this, 'POST', `/tasks/${taskId}/activities`, body);
 
 						returnData.push({
 							json: responseData,
