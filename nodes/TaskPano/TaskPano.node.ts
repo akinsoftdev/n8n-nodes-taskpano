@@ -59,6 +59,18 @@ export class TaskPano implements INodeType {
 				},
 				options: [
 					{
+						name: 'Add Checklist Item',
+						value: 'addChecklistItem',
+						description: 'Add a checklist item to a task',
+						action: 'Add a checklist item',
+					},
+					{
+						name: 'Add Comment',
+						value: 'addComment',
+						description: 'Add a comment to a task',
+						action: 'Add a comment',
+					},
+					{
 						name: 'Create',
 						value: 'create',
 						description: 'Create a new task',
@@ -71,16 +83,10 @@ export class TaskPano implements INodeType {
 						action: 'Create a subtask',
 					},
 					{
-						name: 'Add Checklist Item',
-						value: 'addChecklistItem',
-						description: 'Add a checklist item to a task',
-						action: 'Add a checklist item',
-					},
-					{
-						name: 'Add Comment',
-						value: 'addComment',
-						description: 'Add a comment to a task',
-						action: 'Add a comment',
+						name: 'Update Checklist Item',
+						value: 'updateChecklistItem',
+						description: 'Update a checklist item subject',
+						action: 'Update a checklist item',
 					},
 				],
 				default: 'create',
@@ -97,6 +103,7 @@ export class TaskPano implements INodeType {
 							'createSubtask',
 							'addChecklistItem',
 							'addComment',
+							'updateChecklistItem',
 						],
 						resource: ['task'],
 					},
@@ -137,6 +144,7 @@ export class TaskPano implements INodeType {
 							'createSubtask',
 							'addChecklistItem',
 							'addComment',
+							'updateChecklistItem',
 						],
 						resource: ['task'],
 					},
@@ -194,6 +202,7 @@ export class TaskPano implements INodeType {
 						operation: [
 							'addChecklistItem',
 							'addComment',
+							'updateChecklistItem',
 						],
 						resource: ['task'],
 					},
@@ -255,6 +264,39 @@ export class TaskPano implements INodeType {
 				default: '',
 				placeholder: 'e.g., This is a comment',
 				description: 'The comment to add to the task',
+			},
+			{
+				displayName: 'Checklist Item Name or ID',
+				name: 'checklistItemId',
+				type: 'options',
+				required: true,
+				displayOptions: {
+					show: {
+						operation: ['updateChecklistItem'],
+						resource: ['task'],
+					},
+				},
+				typeOptions: {
+					loadOptionsMethod: 'getChecklistItems',
+					loadOptionsDependsOn: ['taskId'],
+				},
+				default: '',
+				description: 'Select the checklist item to update. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+			},
+			{
+				displayName: 'New Subject',
+				name: 'newSubject',
+				type: 'string',
+				required: true,
+				displayOptions: {
+					show: {
+						operation: ['updateChecklistItem'],
+						resource: ['task'],
+					},
+				},
+				default: '',
+				placeholder: 'e.g., Updated checklist item',
+				description: 'The new subject for the checklist item',
 			},
 		],
 	};
@@ -372,6 +414,27 @@ export class TaskPano implements INodeType {
 					throw new NodeOperationError(this.getNode(), `Failed to load tasks: ${error.message}`);
 				}
 			},
+
+			async getChecklistItems(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const taskId = this.getCurrentNodeParameter('taskId');
+
+				if (!taskId) {
+					return [];
+				}
+
+				try {
+					const response = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/show`);
+
+					const checklistItems = response.data?.task?.task_checklists_with_separators || [];
+
+					return checklistItems.map((item: IDataObject) => ({
+						name: item.subject as string,
+						value: item.id as string,
+					}));
+				} catch (error) {
+					throw new NodeOperationError(this.getNode(), `Failed to load checklist items: ${error.message}`);
+				}
+			},
 		},
 	};
 
@@ -449,6 +512,25 @@ export class TaskPano implements INodeType {
 						};
 
 						const responseData = await taskPanoApiRequest.call(this, 'POST', `/tasks/${taskId}/activities`, body);
+
+						returnData.push({
+							json: responseData,
+							pairedItem: {
+								item: i,
+							},
+						});
+					}
+
+					if (operation === 'updateChecklistItem') {
+						const taskId = this.getNodeParameter('taskId', i) as string;
+						const checklistItemId = this.getNodeParameter('checklistItemId', i) as string;
+						const newSubject = this.getNodeParameter('newSubject', i) as string;
+
+						const body: IDataObject = {
+							subject: newSubject,
+						};
+
+						const responseData = await taskPanoApiRequest.call(this, 'PUT', `/tasks/${taskId}/checklists/${checklistItemId}`, body);
 
 						returnData.push({
 							json: responseData,
