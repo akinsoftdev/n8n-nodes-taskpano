@@ -88,6 +88,12 @@ export class TaskPano implements INodeType {
 						description: 'Update a checklist item subject',
 						action: 'Update a checklist item',
 					},
+					{
+						name: 'Update Checklist Item Status',
+						value: 'updateChecklistItemStatus',
+						description: 'Update a checklist item status (completed/uncompleted)',
+						action: 'Update a checklist item status',
+					},
 				],
 				default: 'create',
 				noDataExpression: true,
@@ -104,6 +110,7 @@ export class TaskPano implements INodeType {
 							'addChecklistItem',
 							'addComment',
 							'updateChecklistItem',
+							'updateChecklistItemStatus',
 						],
 						resource: ['task'],
 					},
@@ -145,6 +152,7 @@ export class TaskPano implements INodeType {
 							'addChecklistItem',
 							'addComment',
 							'updateChecklistItem',
+							'updateChecklistItemStatus',
 						],
 						resource: ['task'],
 					},
@@ -203,6 +211,7 @@ export class TaskPano implements INodeType {
 							'addChecklistItem',
 							'addComment',
 							'updateChecklistItem',
+							'updateChecklistItemStatus',
 						],
 						resource: ['task'],
 					},
@@ -272,7 +281,7 @@ export class TaskPano implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['updateChecklistItem'],
+						operation: ['updateChecklistItem', 'updateChecklistItemStatus'],
 						resource: ['task'],
 					},
 				},
@@ -297,6 +306,32 @@ export class TaskPano implements INodeType {
 				default: '',
 				placeholder: 'e.g., Updated checklist item',
 				description: 'The new subject for the checklist item',
+			},
+			{
+				displayName: 'Status',
+				name: 'checklistItemStatus',
+				type: 'options',
+				required: true,
+				displayOptions: {
+					show: {
+						operation: ['updateChecklistItemStatus'],
+						resource: ['task'],
+					},
+				},
+				options: [
+					{
+						name: 'Completed',
+						value: true,
+						description: 'Mark the checklist item as completed',
+					},
+					{
+						name: 'Uncompleted',
+						value: false,
+						description: 'Mark the checklist item as uncompleted',
+					},
+				],
+				default: true,
+				description: 'The status to set for the checklist item',
 			},
 		],
 	};
@@ -528,6 +563,25 @@ export class TaskPano implements INodeType {
 
 						const body: IDataObject = {
 							subject: newSubject,
+						};
+
+						const responseData = await taskPanoApiRequest.call(this, 'PUT', `/tasks/${taskId}/checklists/${checklistItemId}`, body);
+
+						returnData.push({
+							json: responseData,
+							pairedItem: {
+								item: i,
+							},
+						});
+					}
+
+					if (operation === 'updateChecklistItemStatus') {
+						const taskId = this.getNodeParameter('taskId', i) as string;
+						const checklistItemId = this.getNodeParameter('checklistItemId', i) as string;
+						const status = this.getNodeParameter('checklistItemStatus', i) as boolean;
+
+						const body: IDataObject = {
+							completed: status,
 						};
 
 						const responseData = await taskPanoApiRequest.call(this, 'PUT', `/tasks/${taskId}/checklists/${checklistItemId}`, body);
