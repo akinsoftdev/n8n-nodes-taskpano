@@ -94,6 +94,12 @@ export class TaskPano implements INodeType {
 						description: 'Update a checklist item status (completed/uncompleted)',
 						action: 'Update a checklist item status',
 					},
+					{
+						name: 'Update Task',
+						value: 'updateTask',
+						description: 'Update a task',
+						action: 'Update a task',
+					},
 				],
 				default: 'create',
 				noDataExpression: true,
@@ -111,6 +117,7 @@ export class TaskPano implements INodeType {
 							'addComment',
 							'updateChecklistItem',
 							'updateChecklistItemStatus',
+							'updateTask',
 						],
 						resource: ['task'],
 					},
@@ -153,6 +160,7 @@ export class TaskPano implements INodeType {
 							'addComment',
 							'updateChecklistItem',
 							'updateChecklistItemStatus',
+							'updateTask',
 						],
 						resource: ['task'],
 					},
@@ -212,6 +220,7 @@ export class TaskPano implements INodeType {
 							'addComment',
 							'updateChecklistItem',
 							'updateChecklistItemStatus',
+							'updateTask',
 						],
 						resource: ['task'],
 					},
@@ -332,6 +341,48 @@ export class TaskPano implements INodeType {
 				],
 				default: true,
 				description: 'The status to set for the checklist item',
+			},
+			{
+				displayName: 'Additional Fields',
+				name: 'additionalFields',
+				type: 'collection',
+				placeholder: 'Add Field',
+				displayOptions: {
+					show: {
+						operation: ['updateTask'],
+						resource: ['task'],
+					},
+				},
+				default: {},
+				options: [
+					{
+						displayName: 'Subject',
+						name: 'subject',
+						type: 'string',
+						default: '',
+						placeholder: 'e.g., Updated task name',
+						description: 'The new subject/name for the task',
+					},
+					{
+						displayName: 'Description',
+						name: 'description',
+						type: 'string',
+						typeOptions: {
+							rows: 3,
+						},
+						default: '',
+						placeholder: 'e.g., Updated task description',
+						description: 'The new description for the task',
+					},
+					{
+						displayName: 'Special Code',
+						name: 'special_code',
+						type: 'string',
+						default: '',
+						placeholder: 'e.g., TASK-123',
+						description: 'The special code for the task',
+					},
+				],
 			},
 		],
 	};
@@ -585,6 +636,24 @@ export class TaskPano implements INodeType {
 						};
 
 						const responseData = await taskPanoApiRequest.call(this, 'PUT', `/tasks/${taskId}/checklists/${checklistItemId}`, body);
+
+						returnData.push({
+							json: responseData,
+							pairedItem: {
+								item: i,
+							},
+						});
+					}
+
+					if (operation === 'updateTask') {
+						const taskId = this.getNodeParameter('taskId', i) as string;
+						const additionalFields = this.getNodeParameter('additionalFields', i) as IDataObject;
+
+						const body: IDataObject = {
+							...additionalFields,
+						};
+
+						const responseData = await taskPanoApiRequest.call(this, 'PUT', `/tasks/${taskId}`, body);
 
 						returnData.push({
 							json: responseData,
