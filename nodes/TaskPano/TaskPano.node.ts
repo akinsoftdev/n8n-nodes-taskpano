@@ -423,9 +423,9 @@ export class TaskPano implements INodeType {
 				}
 
 				try {
-					const response = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/show`);
+					const response = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/checklists`);
 
-					const checklistItems = response.data?.task?.task_checklists_with_separators || [];
+					const checklistItems = response.data?.checklists || [];
 
 					return checklistItems.map((item: IDataObject) => ({
 						name: item.subject as string,
