@@ -1076,10 +1076,10 @@ export class TaskPano implements INodeType {
 						const assigneeId = this.getNodeParameter('assigneeId', i) as string;
 
 						const body: IDataObject = {
-							toggle: parseInt(assigneeId, 10),
+							user_id: parseInt(assigneeId, 10),
 						};
 
-						const responseData = await taskPanoApiRequest.call(this, 'PUT', `/tasks/${taskId}/assignees`, body);
+						const responseData = await taskPanoApiRequest.call(this, 'POST', `/tasks/${taskId}/assignees`, body);
 
 						returnData.push({
 							json: responseData,
@@ -1108,10 +1108,10 @@ export class TaskPano implements INodeType {
 						const subscriptionId = this.getNodeParameter('subscriptionId', i) as string;
 
 						const body: IDataObject = {
-							toggle: parseInt(subscriptionId, 10),
+							user_id: parseInt(subscriptionId, 10),
 						};
 
-						const responseData = await taskPanoApiRequest.call(this, 'PUT', `/tasks/${taskId}/subscriptions`, body);
+						const responseData = await taskPanoApiRequest.call(this, 'POST', `/tasks/${taskId}/subscriptions`, body);
 
 						returnData.push({
 							json: responseData,
