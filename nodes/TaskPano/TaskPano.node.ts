@@ -101,6 +101,12 @@ export class TaskPano implements INodeType {
 						action: 'Create a subtask',
 					},
 					{
+						name: 'Move Task',
+						value: 'moveTask',
+						description: 'Move a task to a different list',
+						action: 'Move a task',
+					},
+					{
 						name: 'Remove Assignee',
 						value: 'removeAssignee',
 						description: 'Remove an assignee from a task',
@@ -160,6 +166,7 @@ export class TaskPano implements INodeType {
 							'updateChecklistItem',
 							'updateChecklistItemStatus',
 							'updateTask',
+							'moveTask',
 						],
 						resource: ['task'],
 					},
@@ -209,6 +216,7 @@ export class TaskPano implements INodeType {
 							'updateChecklistItem',
 							'updateChecklistItemStatus',
 							'updateTask',
+							'moveTask',
 						],
 						resource: ['task'],
 					},
@@ -275,6 +283,7 @@ export class TaskPano implements INodeType {
 							'updateChecklistItem',
 							'updateChecklistItemStatus',
 							'updateTask',
+							'moveTask',
 						],
 						resource: ['task'],
 					},
@@ -285,6 +294,24 @@ export class TaskPano implements INodeType {
 				},
 				default: '',
 				description: 'Select the task to add the comment to. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+			},
+			{
+				displayName: 'Target List Name or ID',
+				name: 'targetListId',
+				type: 'options',
+				required: true,
+				displayOptions: {
+					show: {
+						operation: ['moveTask'],
+						resource: ['task'],
+					},
+				},
+				typeOptions: {
+					loadOptionsMethod: 'getLists',
+					loadOptionsDependsOn: ['organizationId', 'projectNumericId'],
+				},
+				default: '',
+				description: 'Select the target list to move the task to. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 			},
 			{
 				displayName: 'Task Name',
@@ -637,13 +664,24 @@ export class TaskPano implements INodeType {
 
 			async getLists(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const projectId = this.getCurrentNodeParameter('projectId');
+				const projectNumericId = this.getCurrentNodeParameter('projectNumericId');
 
-				if (!projectId) {
+				if (!projectId && !projectNumericId) {
 					return [];
 				}
 
 				try {
-					const response = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectId}/lists`);
+					let projectHash: string;
+
+					if (projectId) {
+						projectHash = projectId as string;
+					} else {
+						const organizationId = this.getCurrentNodeParameter('organizationId');
+
+						projectHash = await getProjectHashFromNumericId.call(this, organizationId as string, projectNumericId as string);
+					}
+
+					const response = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/lists`);
 
 					const lists = response.data?.lists || [];
 
@@ -1088,6 +1126,20 @@ export class TaskPano implements INodeType {
 						const taskSubscriptionId = this.getNodeParameter('taskSubscriptionId', i) as string;
 
 						const responseData = await taskPanoApiRequest.call(this, 'DELETE', `/tasks/${taskId}/subscriptions/${taskSubscriptionId}`);
+
+						returnData.push({
+							json: responseData,
+							pairedItem: {
+								item: i,
+							},
+						});
+					}
+
+					if (operation === 'moveTask') {
+						const taskId = this.getNodeParameter('taskId', i) as string;
+						const targetListId = this.getNodeParameter('targetListId', i) as string;
+
+						const responseData = await taskPanoApiRequest.call(this, 'PATCH', `/tasks/${taskId}/move/${targetListId}`);
 
 						returnData.push({
 							json: responseData,
