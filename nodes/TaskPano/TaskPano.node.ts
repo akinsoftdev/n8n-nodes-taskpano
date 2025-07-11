@@ -9,7 +9,7 @@ import {
 	NodeConnectionType,
 	NodeOperationError,
 } from 'n8n-workflow';
-import { taskPanoApiRequest, taskPanoApiRequestAllItems } from './GenericFunctions';
+import { taskPanoApiRequest, taskPanoApiRequestAllItems, getProjectHashFromNumericId } from './GenericFunctions';
 
 export class TaskPano implements INodeType {
 	description: INodeTypeDescription = {
@@ -59,6 +59,12 @@ export class TaskPano implements INodeType {
 				},
 				options: [
 					{
+						name: 'Add Assignee',
+						value: 'addAssignee',
+						description: 'Add an assignee to a task',
+						action: 'Add an assignee',
+					},
+					{
 						name: 'Add Checklist Item',
 						value: 'addChecklistItem',
 						description: 'Add a checklist item to a task',
@@ -69,6 +75,12 @@ export class TaskPano implements INodeType {
 						value: 'addComment',
 						description: 'Add a comment to a task',
 						action: 'Add a comment',
+					},
+					{
+						name: 'Add Subscription',
+						value: 'addSubscription',
+						description: 'Add a subscription to a task',
+						action: 'Add a subscription',
 					},
 					{
 						name: 'Add Tag',
@@ -87,6 +99,18 @@ export class TaskPano implements INodeType {
 						value: 'createSubtask',
 						description: 'Create a new subtask',
 						action: 'Create a subtask',
+					},
+					{
+						name: 'Remove Assignee',
+						value: 'removeAssignee',
+						description: 'Remove an assignee from a task',
+						action: 'Remove an assignee',
+					},
+					{
+						name: 'Remove Subscription',
+						value: 'removeSubscription',
+						description: 'Remove a subscription from a task',
+						action: 'Remove a subscription',
 					},
 					{
 						name: 'Remove Tag',
@@ -127,7 +151,11 @@ export class TaskPano implements INodeType {
 							'createSubtask',
 							'addChecklistItem',
 							'addComment',
+							'addAssignee',
+							'addSubscription',
 							'addTag',
+							'removeAssignee',
+							'removeSubscription',
 							'removeTag',
 							'updateChecklistItem',
 							'updateChecklistItemStatus',
@@ -172,7 +200,11 @@ export class TaskPano implements INodeType {
 							'createSubtask',
 							'addChecklistItem',
 							'addComment',
+							'addAssignee',
+							'addSubscription',
 							'addTag',
+							'removeAssignee',
+							'removeSubscription',
 							'removeTag',
 							'updateChecklistItem',
 							'updateChecklistItemStatus',
@@ -234,7 +266,11 @@ export class TaskPano implements INodeType {
 						operation: [
 							'addChecklistItem',
 							'addComment',
+							'addAssignee',
+							'addSubscription',
 							'addTag',
+							'removeAssignee',
+							'removeSubscription',
 							'removeTag',
 							'updateChecklistItem',
 							'updateChecklistItemStatus',
@@ -442,6 +478,86 @@ export class TaskPano implements INodeType {
 				default: '',
 				description: 'Select the tag to remove from the task. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 			},
+			{
+				displayName: 'Assignee Name or ID',
+				name: 'assigneeId',
+				type: 'options',
+				required: true,
+				displayOptions: {
+					show: {
+						operation: ['addAssignee'],
+						resource: ['task'],
+					},
+				},
+				typeOptions: {
+					loadOptionsMethod: 'getAvailableAssignees',
+					loadOptionsDependsOn: [
+						'organizationId',
+						'projectNumericId',
+						'taskId',
+					],
+				},
+				default: '',
+				description: 'Select the assignee to add to the task. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+			},
+			{
+				displayName: 'Assignee Name or ID',
+				name: 'taskAssigneeId',
+				type: 'options',
+				required: true,
+				displayOptions: {
+					show: {
+						operation: ['removeAssignee'],
+						resource: ['task'],
+					},
+				},
+				typeOptions: {
+					loadOptionsMethod: 'getTaskAssignees',
+					loadOptionsDependsOn: ['taskId'],
+				},
+				default: '',
+				description: 'Select the assignee to remove from the task. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+			},
+			{
+				displayName: 'Subscription Name or ID',
+				name: 'subscriptionId',
+				type: 'options',
+				required: true,
+				displayOptions: {
+					show: {
+						operation: ['addSubscription'],
+						resource: ['task'],
+					},
+				},
+				typeOptions: {
+					loadOptionsMethod: 'getAvailableSubscriptions',
+					loadOptionsDependsOn: [
+						'organizationId',
+						'projectNumericId',
+						'taskId',
+					],
+				},
+				default: '',
+				description: 'Select the subscription to add to the task. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+			},
+			{
+				displayName: 'Subscription Name or ID',
+				name: 'taskSubscriptionId',
+				type: 'options',
+				required: true,
+				displayOptions: {
+					show: {
+						operation: ['removeSubscription'],
+						resource: ['task'],
+					},
+				},
+				typeOptions: {
+					loadOptionsMethod: 'getTaskSubscriptions',
+					loadOptionsDependsOn: ['taskId'],
+				},
+				default: '',
+				description: 'Select the subscription to remove from the task. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+			},
 		],
 	};
 
@@ -590,22 +706,9 @@ export class TaskPano implements INodeType {
 				}
 
 				try {
-					const projectsResponse = await taskPanoApiRequest.call(
-						this,
-						'GET',
-						`/organizations/${organizationId}/projects`,
-						{},
-						{ folder_id: -1 },
-					);
+					const projectHash = await getProjectHashFromNumericId.call(this, organizationId as string, projectNumericId as string);
 
-					const projects = projectsResponse.data?.projects || [];
-					const project = projects.find((p: IDataObject) => p.id === parseInt(projectNumericId as string, 10));
-
-					if (!project) {
-						throw new NodeOperationError(this.getNode(), `Project with numeric ID ${projectNumericId} not found`);
-					}
-
-					const projectResponse = await taskPanoApiRequest.call(this, 'GET', `/projects/${project.id_hash}/tags`);
+					const projectResponse = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/tags`);
 					const projectTags = projectResponse.data?.tags || [];
 
 					const taskResponse = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/tags`);
@@ -642,6 +745,118 @@ export class TaskPano implements INodeType {
 					}));
 				} catch (error) {
 					throw new NodeOperationError(this.getNode(), `Failed to load task tags: ${error.message}`);
+				}
+			},
+
+			async getAvailableAssignees(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const organizationId = this.getCurrentNodeParameter('organizationId');
+				const projectNumericId = this.getCurrentNodeParameter('projectNumericId');
+				const taskId = this.getCurrentNodeParameter('taskId');
+
+				if (!organizationId || !projectNumericId || !taskId) {
+					return [];
+				}
+
+				try {
+					const projectHash = await getProjectHashFromNumericId.call(this, organizationId as string, projectNumericId as string);
+
+					const projectAssigneesResponse = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/assignees`);
+					const projectAssignees = projectAssigneesResponse.data?.projectAssignees || [];
+
+					const taskAssigneesResponse = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/assignees`);
+					const taskAssignees = taskAssigneesResponse.data?.assignees || [];
+
+					const currentTaskAssigneeIds = new Set(taskAssignees.map((assignee: IDataObject) => assignee.id));
+
+					const availableAssignees = projectAssignees.filter((assignee: IDataObject) =>
+						!currentTaskAssigneeIds.has(assignee.id)
+					);
+
+					return availableAssignees.map((assignee: IDataObject) => ({
+						name: assignee.name as string,
+						value: assignee.id as string,
+					}));
+				} catch (error) {
+					throw new NodeOperationError(this.getNode(), `Failed to load available assignees: ${error.message}`);
+				}
+			},
+
+			async getAvailableSubscriptions(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const organizationId = this.getCurrentNodeParameter('organizationId');
+				const projectNumericId = this.getCurrentNodeParameter('projectNumericId');
+				const taskId = this.getCurrentNodeParameter('taskId');
+
+				if (!organizationId || !projectNumericId || !taskId) {
+					return [];
+				}
+
+				try {
+					const projectHash = await getProjectHashFromNumericId.call(this, organizationId as string, projectNumericId as string);
+
+					const projectAssigneesResponse = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/assignees`);
+					const projectAssignees = projectAssigneesResponse.data?.projectAssignees || [];
+
+					const taskAssigneesResponse = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/assignees`);
+					const taskAssignees = taskAssigneesResponse.data?.assignees || [];
+
+					const taskSubscriptionsResponse = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/subscriptions`);
+					const taskSubscriptions = taskSubscriptionsResponse.data?.subscriptions || [];
+
+					const currentTaskAssigneeIds = new Set(taskAssignees.map((assignee: IDataObject) => assignee.id));
+					const currentTaskSubscriptionIds = new Set(taskSubscriptions.map((subscription: IDataObject) => subscription.id));
+
+					const availableSubscriptions = projectAssignees.filter((assignee: IDataObject) =>
+						!currentTaskSubscriptionIds.has(assignee.id) && !currentTaskAssigneeIds.has(assignee.id)
+					);
+
+					return availableSubscriptions.map((assignee: IDataObject) => ({
+						name: assignee.name as string,
+						value: assignee.id as string,
+					}));
+				} catch (error) {
+					throw new NodeOperationError(this.getNode(), `Failed to load available subscriptions: ${error.message}`);
+				}
+			},
+
+			async getTaskAssignees(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const taskId = this.getCurrentNodeParameter('taskId');
+
+				if (!taskId) {
+					return [];
+				}
+
+				try {
+					const response = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/assignees`);
+
+					const taskAssignees = response.data?.assignees || [];
+
+					return taskAssignees.map((assignee: IDataObject) => ({
+						name: assignee.name as string,
+						value: assignee.id as string,
+					}));
+				} catch (error) {
+					throw new NodeOperationError(this.getNode(), `Failed to load task assignees: ${error.message}`);
+				}
+			},
+
+			async getTaskSubscriptions(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const taskId = this.getCurrentNodeParameter('taskId');
+
+				if (!taskId) {
+					return [];
+				}
+
+				try {
+					const response = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/subscriptions`);
+
+					const taskSubscriptions = response.data?.subscriptions || [];
+
+					return taskSubscriptions.map((subscription: IDataObject) => ({
+						name: subscription.name as string,
+						value: subscription.id as string,
+					}));
+				} catch (error) {
+					throw new NodeOperationError(this.getNode(), `Failed to load task subscriptions: ${error.message}`);
 				}
 			},
 		},
@@ -817,6 +1032,70 @@ export class TaskPano implements INodeType {
 							},
 						});
 					}
+
+					if (operation === 'addAssignee') {
+						const taskId = this.getNodeParameter('taskId', i) as string;
+						const assigneeId = this.getNodeParameter('assigneeId', i) as string;
+
+						const body: IDataObject = {
+							toggle: parseInt(assigneeId, 10),
+						};
+
+						const responseData = await taskPanoApiRequest.call(this, 'PUT', `/tasks/${taskId}/assignees`, body);
+
+						returnData.push({
+							json: responseData,
+							pairedItem: {
+								item: i,
+							},
+						});
+					}
+
+					if (operation === 'removeAssignee') {
+						const taskId = this.getNodeParameter('taskId', i) as string;
+						const taskAssigneeId = this.getNodeParameter('taskAssigneeId', i) as string;
+
+						const responseData = await taskPanoApiRequest.call(this, 'DELETE', `/tasks/${taskId}/assignees/${taskAssigneeId}`);
+
+						returnData.push({
+							json: responseData,
+							pairedItem: {
+								item: i,
+							},
+						});
+					}
+
+					if (operation === 'addSubscription') {
+						const taskId = this.getNodeParameter('taskId', i) as string;
+						const subscriptionId = this.getNodeParameter('subscriptionId', i) as string;
+
+						const body: IDataObject = {
+							toggle: parseInt(subscriptionId, 10),
+						};
+
+						const responseData = await taskPanoApiRequest.call(this, 'PUT', `/tasks/${taskId}/subscriptions`, body);
+
+						returnData.push({
+							json: responseData,
+							pairedItem: {
+								item: i,
+							},
+						});
+					}
+
+					if (operation === 'removeSubscription') {
+						const taskId = this.getNodeParameter('taskId', i) as string;
+						const taskSubscriptionId = this.getNodeParameter('taskSubscriptionId', i) as string;
+
+						const responseData = await taskPanoApiRequest.call(this, 'DELETE', `/tasks/${taskId}/subscriptions/${taskSubscriptionId}`);
+
+						returnData.push({
+							json: responseData,
+							pairedItem: {
+								item: i,
+							},
+						});
+					}
 				}
 			} catch (error) {
 				if (this.continueOnFail()) {
@@ -826,8 +1105,10 @@ export class TaskPano implements INodeType {
 							item: i,
 						},
 					});
+
 					continue;
 				}
+
 				throw new NodeOperationError(this.getNode(), `Failed to ${operation} ${resource}: ${error.message}`, {
 					itemIndex: i,
 				});
