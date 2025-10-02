@@ -89,8 +89,8 @@ export class TaskPano implements INodeType {
 						action: 'Add a tag',
 					},
 					{
-						name: 'Create',
-						value: 'create',
+						name: 'Create Task',
+						value: 'createTask',
 						description: 'Create a new task',
 						action: 'Create a task',
 					},
@@ -919,7 +919,7 @@ export class TaskPano implements INodeType {
 
 			try {
 				if (resource === 'task') {
-					if (operation === 'create') {
+					if (operation === 'createTask') {
 						const listId = this.getNodeParameter('listId', i) as string;
 						const name = this.getNodeParameter('name', i) as string;
 
@@ -960,6 +960,38 @@ export class TaskPano implements INodeType {
 						const taskId = this.getNodeParameter('taskId', i) as string;
 
 						const responseData = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/show`);
+
+						returnData.push({
+							json: responseData,
+							pairedItem: {
+								item: i,
+							},
+						});
+					}
+
+					if (operation === 'updateTask') {
+						const taskId = this.getNodeParameter('taskId', i) as string;
+						const additionalFields = this.getNodeParameter('additionalFields', i) as IDataObject;
+
+						const body: IDataObject = {
+							...additionalFields,
+						};
+
+						const responseData = await taskPanoApiRequest.call(this, 'PUT', `/tasks/${taskId}`, body);
+
+						returnData.push({
+							json: responseData,
+							pairedItem: {
+								item: i,
+							},
+						});
+					}
+
+					if (operation === 'moveTask') {
+						const taskId = this.getNodeParameter('taskId', i) as string;
+						const targetListId = this.getNodeParameter('targetListId', i) as string;
+
+						const responseData = await taskPanoApiRequest.call(this, 'PATCH', `/tasks/${taskId}/move/${targetListId}`);
 
 						returnData.push({
 							json: responseData,
@@ -1034,24 +1066,6 @@ export class TaskPano implements INodeType {
 						};
 
 						const responseData = await taskPanoApiRequest.call(this, 'PUT', `/tasks/${taskId}/checklists/${checklistItemId}`, body);
-
-						returnData.push({
-							json: responseData,
-							pairedItem: {
-								item: i,
-							},
-						});
-					}
-
-					if (operation === 'updateTask') {
-						const taskId = this.getNodeParameter('taskId', i) as string;
-						const additionalFields = this.getNodeParameter('additionalFields', i) as IDataObject;
-
-						const body: IDataObject = {
-							...additionalFields,
-						};
-
-						const responseData = await taskPanoApiRequest.call(this, 'PUT', `/tasks/${taskId}`, body);
 
 						returnData.push({
 							json: responseData,
@@ -1148,20 +1162,6 @@ export class TaskPano implements INodeType {
 						const taskSubscriptionId = this.getNodeParameter('taskSubscriptionId', i) as string;
 
 						const responseData = await taskPanoApiRequest.call(this, 'DELETE', `/tasks/${taskId}/subscriptions/${taskSubscriptionId}`);
-
-						returnData.push({
-							json: responseData,
-							pairedItem: {
-								item: i,
-							},
-						});
-					}
-
-					if (operation === 'moveTask') {
-						const taskId = this.getNodeParameter('taskId', i) as string;
-						const targetListId = this.getNodeParameter('targetListId', i) as string;
-
-						const responseData = await taskPanoApiRequest.call(this, 'PATCH', `/tasks/${taskId}/move/${targetListId}`);
 
 						returnData.push({
 							json: responseData,
