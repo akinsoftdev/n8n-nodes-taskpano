@@ -175,7 +175,7 @@ export class TaskPano implements INodeType {
 					loadOptionsMethod: 'getOrganizations',
 				},
 				default: '',
-				required: true,
+				required: false,
 				description: 'The organization to create the task in. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 			},
 			{
@@ -193,14 +193,14 @@ export class TaskPano implements INodeType {
 					loadOptionsDependsOn: ['organizationId'],
 				},
 				default: '',
-				required: true,
+				required: false,
 				description: 'The project to create the task in. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 			},
 			{
 				displayName: 'Project Name or ID',
 				name: 'projectNumericId',
 				type: 'options',
-				required: true,
+				required: false,
 				displayOptions: {
 					show: {
 						operation: [
