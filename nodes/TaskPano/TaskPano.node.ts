@@ -101,6 +101,12 @@ export class TaskPano implements INodeType {
 						action: 'Create a subtask',
 					},
 					{
+						name: 'Get Task',
+						value: 'getTask',
+						description: 'Get a task by ID',
+						action: 'Get a task',
+					},
+					{
 						name: 'Move Task',
 						value: 'moveTask',
 						description: 'Move a task to a different list',
@@ -167,6 +173,7 @@ export class TaskPano implements INodeType {
 							'updateChecklistItemStatus',
 							'updateTask',
 							'moveTask',
+							'getTask',
 						],
 						resource: ['task'],
 					},
@@ -217,6 +224,7 @@ export class TaskPano implements INodeType {
 							'updateChecklistItemStatus',
 							'updateTask',
 							'moveTask',
+							'getTask',
 						],
 						resource: ['task'],
 					},
@@ -284,6 +292,7 @@ export class TaskPano implements INodeType {
 							'updateChecklistItemStatus',
 							'updateTask',
 							'moveTask',
+							'getTask',
 						],
 						resource: ['task'],
 					},
@@ -938,6 +947,19 @@ export class TaskPano implements INodeType {
 						};
 
 						const responseData = await taskPanoApiRequest.call(this, 'POST', `/tasks/${parentTaskId}/subtasks`, body);
+
+						returnData.push({
+							json: responseData,
+							pairedItem: {
+								item: i,
+							},
+						});
+					}
+
+					if (operation === 'getTask') {
+						const taskId = this.getNodeParameter('taskId', i) as string;
+
+						const responseData = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/show`);
 
 						returnData.push({
 							json: responseData,
