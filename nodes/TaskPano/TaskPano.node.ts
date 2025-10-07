@@ -627,7 +627,7 @@ export class TaskPano implements INodeType {
 				},
 				typeOptions: {
 					minValue: 1,
-					maxValue: 500,
+					maxValue: 100,
 				},
 				default: 20,
 				description: 'Max number of results to return',
