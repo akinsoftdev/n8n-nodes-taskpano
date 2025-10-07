@@ -1593,50 +1593,25 @@ export class TaskPano implements INodeType {
 						const scope = filters.scope || 'active';
 						const endpoint = `/tasks/${scope}`;
 
+						let tasks: IDataObject[] = [];
+
 						if (returnAll) {
-							const limit = 500;
-							queryParams.limit = limit;
-
-							let allTasks: IDataObject[] = [];
-							let currentPage = 1;
-							let hasMorePages = true;
-
-							while (hasMorePages) {
-								queryParams.page = currentPage;
-								const responseData = await taskPanoApiRequest.call(this, 'GET', endpoint, {}, queryParams);
-
-								const tasks = responseData.data?.tasks?.data || [];
-								allTasks = allTasks.concat(tasks);
-
-								const lastPage = responseData.data?.tasks?.last_page || 1;
-								hasMorePages = currentPage < lastPage;
-								currentPage++;
-							}
-
-							allTasks.forEach((task: IDataObject) => {
-								returnData.push({
-									json: task,
-									pairedItem: {
-										item: i,
-									},
-								});
-							});
+							tasks = await taskPanoApiRequestAllItems.call(this, endpoint, 'tasks', {}, queryParams);
 						} else {
 							const limit = this.getNodeParameter('limit', i) as number;
 							queryParams.limit = limit;
 							const responseData = await taskPanoApiRequest.call(this, 'GET', endpoint, {}, queryParams);
-
-							const tasks = responseData.data?.tasks?.data || [];
-
-							tasks.forEach((task: IDataObject) => {
-								returnData.push({
-									json: task,
-									pairedItem: {
-										item: i,
-									},
-								});
-							});
+							tasks = responseData.data?.tasks?.data || [];
 						}
+
+						tasks.forEach((task: IDataObject) => {
+							returnData.push({
+								json: task,
+								pairedItem: {
+									item: i,
+								},
+							});
+						});
 					}
 
 					if (operation === 'updateTask') {
