@@ -84,3 +84,17 @@ export async function getProjectHashFromNumericId(
 
 	return project.id_hash as string;
 }
+
+export async function getOrganizationNumericIdFromHash(
+	this: IExecuteFunctions | ILoadOptionsFunctions,
+	organizationIdHash: string,
+): Promise<number | null> {
+	const { data } = await taskPanoApiRequest.call(this, 'GET', '/organizations');
+	const ownedOrganizations = data?.organizations || [];
+	const assignedOrganizations = data?.assigneedOrganizations || [];
+	const allOrganizations = [...ownedOrganizations, ...assignedOrganizations];
+
+	const organization = allOrganizations.find((org: IDataObject) => org.id_hash === organizationIdHash);
+
+	return organization ? (organization.id as number) : null;
+}

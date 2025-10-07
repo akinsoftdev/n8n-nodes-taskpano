@@ -9,7 +9,7 @@ import {
 	NodeConnectionType,
 	NodeOperationError,
 } from 'n8n-workflow';
-import { taskPanoApiRequest, taskPanoApiRequestAllItems, getProjectHashFromNumericId } from './GenericFunctions';
+import { taskPanoApiRequest, taskPanoApiRequestAllItems, getProjectHashFromNumericId, getOrganizationNumericIdFromHash } from './GenericFunctions';
 
 export class TaskPano implements INodeType {
 	description: INodeTypeDescription = {
@@ -107,6 +107,12 @@ export class TaskPano implements INodeType {
 						action: 'Get a task',
 					},
 					{
+						name: 'Get Tasks',
+						value: 'getTasks',
+						description: 'Get multiple tasks with filters',
+						action: 'Get tasks',
+					},
+					{
 						name: 'Move Task',
 						value: 'moveTask',
 						description: 'Move a task to a different list',
@@ -174,6 +180,7 @@ export class TaskPano implements INodeType {
 							'updateTask',
 							'moveTask',
 							'getTask',
+							'getTasks',
 						],
 						resource: ['task'],
 					},
@@ -594,6 +601,328 @@ export class TaskPano implements INodeType {
 				default: '',
 				description: 'Select the subscription to remove from the task. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 			},
+			{
+				displayName: 'Return All',
+				name: 'returnAll',
+				type: 'boolean',
+				displayOptions: {
+					show: {
+						operation: ['getTasks'],
+						resource: ['task'],
+					},
+				},
+				default: false,
+				description: 'Whether to return all results or only up to a given limit',
+			},
+			{
+				displayName: 'Limit',
+				name: 'limit',
+				type: 'number',
+				displayOptions: {
+					show: {
+						operation: ['getTasks'],
+						resource: ['task'],
+						returnAll: [false],
+					},
+				},
+				typeOptions: {
+					minValue: 1,
+					maxValue: 500,
+				},
+				default: 20,
+				description: 'Max number of results to return',
+			},
+			{
+				displayName: 'Filters',
+				name: 'filters',
+				type: 'collection',
+				placeholder: 'Add Filter',
+				displayOptions: {
+					show: {
+						operation: ['getTasks'],
+						resource: ['task'],
+					},
+				},
+				default: {},
+				options: [
+					{
+						displayName: 'Search Query',
+						name: 'q',
+						type: 'string',
+						default: '',
+						placeholder: 'e.g., bug fix',
+						description: 'Search in task subject, description, and special code',
+					},
+					{
+						displayName: 'Scope',
+						name: 'scope',
+						type: 'options',
+						options: [
+							{
+								name: 'Active',
+								value: 'active',
+								description: 'Only active tasks',
+							},
+							{
+								name: 'Archived',
+								value: 'archived',
+								description: 'Only archived tasks',
+							},
+							{
+								name: 'Trashed',
+								value: 'trashed',
+								description: 'Only trashed tasks',
+							},
+							{
+								name: 'All',
+								value: 'all',
+								description: 'All tasks including archived and trashed',
+							},
+						],
+						default: 'active',
+						description: 'The scope of tasks to retrieve',
+					},
+					{
+						displayName: 'Folder Name or ID',
+						name: 'folder_id',
+						type: 'options',
+						typeOptions: {
+							loadOptionsMethod: 'getFoldersForFilters',
+							loadOptionsDependsOn: ['organizationId'],
+						},
+						default: '',
+						description: 'Filter tasks by folder. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+					},
+					{
+						displayName: 'Project Name or ID',
+						name: 'project_id',
+						type: 'options',
+						typeOptions: {
+							loadOptionsMethod: 'getProjectsForFilters',
+							loadOptionsDependsOn: ['organizationId', 'filters.folder_id'],
+						},
+						default: '',
+						description: 'Filter tasks by project. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+					},
+					{
+						displayName: 'List Name or ID',
+						name: 'list_id',
+						type: 'options',
+						typeOptions: {
+							loadOptionsMethod: 'getListsForFilters',
+							loadOptionsDependsOn: ['organizationId', 'filters.project_id'],
+						},
+						default: '',
+						description: 'Filter tasks by list. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+					},
+					{
+						displayName: 'List Status',
+						name: 'list_status',
+						type: 'options',
+						options: [
+							{
+								name: 'Other',
+								value: '0',
+								description: 'Other tasks',
+							},
+							{
+								name: 'To Do',
+								value: '1',
+								description: 'To Do tasks',
+							},
+							{
+								name: 'In Progress',
+								value: '2',
+								description: 'In Progress tasks',
+							},
+							{
+								name: 'Done',
+								value: '3',
+								description: 'Done tasks',
+							},
+							{
+								name: 'Suspended',
+								value: '4',
+								description: 'Suspended tasks',
+							},
+							{
+								name: 'Canceled',
+								value: '5',
+								description: 'Canceled tasks',
+							},
+							{
+								name: 'To Do or In Progress',
+								value: '1001',
+								description: 'Tasks with due date in To Do or In Progress state',
+							},
+						],
+						default: '',
+						description: 'Filter tasks by list status/state',
+					},
+					{
+						displayName: 'Owner(s)',
+						name: 'owners',
+						type: 'multiOptions',
+						typeOptions: {
+							loadOptionsMethod: 'getUsersForFilters',
+							loadOptionsDependsOn: ['organizationId', 'filters.project_id'],
+						},
+						default: [],
+						description: 'Filter tasks by owner user. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+					},
+					{
+						displayName: 'Assignee(s)',
+						name: 'assignees',
+						type: 'multiOptions',
+						typeOptions: {
+							loadOptionsMethod: 'getUsersForFilters',
+							loadOptionsDependsOn: ['organizationId', 'filters.project_id'],
+						},
+						default: [],
+						description: 'Filter tasks by assigned user. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+					},
+					{
+						displayName: 'Subscription(s)',
+						name: 'subscriptions',
+						type: 'multiOptions',
+						typeOptions: {
+							loadOptionsMethod: 'getUsersForFilters',
+							loadOptionsDependsOn: ['organizationId', 'filters.project_id'],
+						},
+						default: [],
+						description: 'Filter tasks by subscription user. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+					},
+					{
+						displayName: 'Tag Name(s)',
+						name: 'tags',
+						type: 'multiOptions',
+						typeOptions: {
+							loadOptionsMethod: 'getTagsForFilters',
+							loadOptionsDependsOn: ['organizationId', 'filters.project_id'],
+						},
+						default: [],
+						description: 'Filter tasks by tags. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+					},
+					{
+						displayName: 'Due Date',
+						name: 'due_date',
+						type: 'options',
+						options: [
+							{
+								name: 'No Filter',
+								value: '',
+								description: 'Do not filter by due date',
+							},
+							{
+								name: 'Has Due Date',
+								value: 'hasDueDate',
+								description: 'Tasks that have a due date set',
+							},
+							{
+								name: 'No Due Date',
+								value: 'null',
+								description: 'Tasks without a due date',
+							},
+							{
+								name: 'Immediately',
+								value: 'immediately',
+								description: 'Tasks marked as immediately',
+							},
+							{
+								name: 'Overdue for Done List',
+								value: 'overdueForDoneList',
+								description: 'Tasks where due date is before completion date',
+							},
+						],
+						default: '',
+						description: 'Filter by due date status. You can also specify a custom date using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+					},
+					{
+						displayName: 'Due Date Start',
+						name: 'due_date_start',
+						type: 'dateTime',
+						default: '',
+						description: 'Filter tasks with due date from this date',
+					},
+					{
+						displayName: 'Due Date End',
+						name: 'due_date_end',
+						type: 'dateTime',
+						default: '',
+						description: 'Filter tasks with due date until this date',
+					},
+					{
+						displayName: 'Completion Date Start',
+						name: 'completion_date_start',
+						type: 'dateTime',
+						default: '',
+						description: 'Filter tasks completed from this date',
+					},
+					{
+						displayName: 'Completion Date End',
+						name: 'completion_date_end',
+						type: 'dateTime',
+						default: '',
+						description: 'Filter tasks completed until this date',
+					},
+					{
+						displayName: 'Sort Type',
+						name: 'sort_type',
+						type: 'options',
+						options: [
+							{
+								name: 'Subject (A-Z)',
+								value: 'subject_asc',
+								description: 'Sort by subject ascending',
+							},
+							{
+								name: 'Subject (Z-A)',
+								value: 'subject_desc',
+								description: 'Sort by subject descending',
+							},
+							{
+								name: 'Created Date (Oldest First)',
+								value: 'created_at_asc',
+								description: 'Sort by creation date ascending',
+							},
+							{
+								name: 'Created Date (Newest First)',
+								value: 'created_at_desc',
+								description: 'Sort by creation date descending',
+							},
+							{
+								name: 'Due Date (Earliest First)',
+								value: 'due_date_asc',
+								description: 'Sort by due date ascending',
+							},
+							{
+								name: 'Due Date (Latest First)',
+								value: 'due_date_desc',
+								description: 'Sort by due date descending',
+							},
+							{
+								name: 'List Changed Date (Oldest First)',
+								value: 'list_changed_at_asc',
+								description: 'Sort by list change date ascending',
+							},
+							{
+								name: 'List Changed Date (Newest First)',
+								value: 'list_changed_at_desc',
+								description: 'Sort by list change date descending',
+							},
+						],
+						default: '',
+						description: 'Sort order for tasks',
+					},
+					{
+						displayName: 'Is Parent',
+						name: 'is_parent',
+						type: 'boolean',
+						default: false,
+						description: 'Whether to only return parent tasks (exclude subtasks)',
+					},
+				],
+			},
 		],
 	};
 
@@ -671,6 +1000,59 @@ export class TaskPano implements INodeType {
 				}
 			},
 
+			async getProjectsForFilters(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const organizationId = this.getCurrentNodeParameter('organizationId');
+
+				if (!organizationId) {
+					return [];
+				}
+
+				const filters = this.getCurrentNodeParameter('filters') as IDataObject;
+				const folderId = filters?.folder_id;
+
+				try {
+					let response;
+
+					if (folderId && folderId !== '-1') {
+						const foldersResponse = await taskPanoApiRequest.call(
+							this,
+							'GET',
+							`/organizations/${organizationId}/folders`,
+						);
+
+						const folders = foldersResponse.data?.folders || [];
+						const folder = folders.find((f: IDataObject) => f.id === folderId);
+
+						if (!folder) {
+							return [];
+						}
+
+						response = await taskPanoApiRequest.call(
+							this,
+							'GET',
+							`/folders/${folder.id_hash}/projects-with-descendants`,
+						);
+					} else {
+						response = await taskPanoApiRequest.call(
+							this,
+							'GET',
+							`/organizations/${organizationId}/projects`,
+							{},
+							{ folder_id: -1 },
+						);
+					}
+
+					const projects = response.data?.projects || [];
+
+					return projects.map((project: IDataObject) => ({
+						name: project.name as string,
+						value: project.id as string,
+					}));
+				} catch (error) {
+					throw new NodeOperationError(this.getNode(), `Failed to load projects: ${error.message}`);
+				}
+			},
+
 			async getLists(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const projectId = this.getCurrentNodeParameter('projectId');
 				const projectNumericId = this.getCurrentNodeParameter('projectNumericId');
@@ -700,6 +1082,143 @@ export class TaskPano implements INodeType {
 					}));
 				} catch (error) {
 					throw new NodeOperationError(this.getNode(), `Failed to load lists: ${error.message}`);
+				}
+			},
+
+			async getListsForFilters(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const filters = this.getCurrentNodeParameter('filters') as IDataObject;
+				const projectNumericId = filters?.project_id;
+
+				if (!projectNumericId) {
+					return [];
+				}
+
+				try {
+					const organizationId = this.getCurrentNodeParameter('organizationId');
+
+					const projectHash = await getProjectHashFromNumericId.call(this, organizationId as string, projectNumericId as string);
+
+					const response = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/lists`);
+
+					const lists = response.data?.lists || [];
+
+					return lists.map((list: IDataObject) => ({
+						name: list.name as string,
+						value: list.id as string,
+					}));
+				} catch (error) {
+					throw new NodeOperationError(this.getNode(), `Failed to load lists: ${error.message}`);
+				}
+			},
+
+			async getUsersForFilters(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const filters = this.getCurrentNodeParameter('filters') as IDataObject;
+				const projectNumericId = filters?.project_id;
+				const organizationId = this.getCurrentNodeParameter('organizationId');
+
+				if (!organizationId) {
+					return [];
+				}
+
+				try {
+					if (projectNumericId) {
+						const projectHash = await getProjectHashFromNumericId.call(this, organizationId as string, projectNumericId as string);
+
+						const response = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/assignees`);
+
+						const projectAssignees = response.data?.projectAssignees || [];
+
+						return projectAssignees.map((user: IDataObject) => ({
+							name: user.name as string,
+							value: user.id as string,
+						}));
+					}
+
+					const response = await taskPanoApiRequest.call(this, 'GET', `/organizations/${organizationId}/assignees-contain-tasks`);
+
+					const users = response.data?.organizationAssignees || [];
+
+					return users.map((user: IDataObject) => ({
+						name: user.name as string,
+						value: user.id as string,
+					}));
+				} catch (error) {
+					throw new NodeOperationError(this.getNode(), `Failed to load users: ${error.message}`);
+				}
+			},
+
+			async getTagsForFilters(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const organizationId = this.getCurrentNodeParameter('organizationId');
+
+				if (!organizationId) {
+					return [];
+				}
+
+				const filters = this.getCurrentNodeParameter('filters') as IDataObject;
+				const projectNumericId = filters?.project_id;
+				const folderId = filters?.folder_id;
+
+				try {
+					const queryParams: IDataObject = {
+						organization_id: organizationId,
+					};
+
+					if(folderId) {
+						queryParams.folder_id = folderId;
+					}
+
+					if (projectNumericId) {
+						queryParams.project_id = projectNumericId;
+					}
+
+					const response = await taskPanoApiRequest.call(
+						this,
+						'GET',
+						'/project-tags/names-contain-tasks',
+						{},
+						queryParams,
+					);
+
+					const tags = response.data?.tags || [];
+
+					return tags.map((tag: string) => ({
+						name: tag,
+						value: tag,
+					}));
+				} catch (error) {
+					throw new NodeOperationError(this.getNode(), `Failed to load tags: ${error.message}`);
+				}
+			},
+
+			async getFoldersForFilters(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const organizationId = this.getCurrentNodeParameter('organizationId');
+
+				if (!organizationId) {
+					return [];
+				}
+
+				try {
+					const response = await taskPanoApiRequest.call(
+						this,
+						'GET',
+						`/organizations/${organizationId}/folders`,
+					);
+
+					const folders = response.data?.folders || [];
+
+					const folderOptions = folders.map((folder: IDataObject) => ({
+						name: folder.name as string,
+						value: folder.id as string,
+					}));
+
+					folderOptions.unshift({
+						name: 'Root Directory',
+						value: '-1',
+					});
+
+					return folderOptions;
+				} catch (error) {
+					throw new NodeOperationError(this.getNode(), `Failed to load folders: ${error.message}`);
 				}
 			},
 
@@ -967,6 +1486,157 @@ export class TaskPano implements INodeType {
 								item: i,
 							},
 						});
+					}
+
+					if (operation === 'getTasks') {
+						const returnAll = this.getNodeParameter('returnAll', i) as boolean;
+						const organizationIdHash = this.getNodeParameter('organizationId', i) as string;
+						const filters = this.getNodeParameter('filters', i) as IDataObject;
+						const queryParams: IDataObject = {};
+
+						if (organizationIdHash) {
+							const organizationNumericId = await getOrganizationNumericIdFromHash.call(this, organizationIdHash);
+
+							if (organizationNumericId) {
+								queryParams.organization_id = organizationNumericId;
+							}
+						}
+
+						if (filters.q) {
+							queryParams.q = filters.q;
+						}
+
+						if (filters.project_id) {
+							queryParams.project_id = filters.project_id;
+						}
+
+						if (filters.list_id) {
+							queryParams.list_id = filters.list_id;
+						}
+
+						if (filters.list_name) {
+							queryParams.list_name = filters.list_name;
+						}
+
+						if (filters.list_status) {
+							queryParams.list_status = filters.list_status;
+						}
+
+						if (filters.tags) {
+							queryParams.tag_name = Array.isArray(filters.tags)
+								? (filters.tags as string[]).join(',')
+								: filters.tags;
+						}
+
+						if (filters.folder_id) {
+							queryParams.folder_id = filters.folder_id;
+						}
+
+						if (filters.assignees) {
+							queryParams.assignees = Array.isArray(filters.assignees)
+								? (filters.assignees as string[]).join(',')
+								: filters.assignees;
+						}
+
+						if (filters.subscriptions) {
+							queryParams.subscriptions = Array.isArray(filters.subscriptions)
+								? (filters.subscriptions as string[]).join(',')
+								: filters.subscriptions;
+						}
+
+						if (filters.owners) {
+							queryParams.owners = Array.isArray(filters.owners)
+								? (filters.owners as string[]).join(',')
+								: filters.owners;
+						}
+
+						if (filters.due_date || filters.due_date_start || filters.due_date_end) {
+							const dueDateFilter: IDataObject = {};
+
+							if (filters.due_date) {
+								dueDateFilter.equal = filters.due_date;
+							}
+
+							if (filters.due_date_start) {
+								dueDateFilter.start = filters.due_date_start;
+							}
+
+							if (filters.due_date_end) {
+								dueDateFilter.end = filters.due_date_end;
+							}
+
+							queryParams.due_date = dueDateFilter;
+						}
+
+						if (filters.completion_date_start || filters.completion_date_end) {
+							const completionDateFilter: IDataObject = {};
+
+							if (filters.completion_date_start) {
+								completionDateFilter.start = filters.completion_date_start;
+							}
+
+							if (filters.completion_date_end) {
+								completionDateFilter.end = filters.completion_date_end;
+							}
+
+							queryParams.completion_date = completionDateFilter;
+						}
+
+						if (filters.sort_type) {
+							queryParams.sort_type = filters.sort_type;
+						}
+
+						if (filters.is_parent !== undefined) {
+							queryParams.is_parent = filters.is_parent;
+						}
+
+						const scope = filters.scope || 'active';
+						const endpoint = `/tasks/${scope}`;
+
+						if (returnAll) {
+							const limit = 500;
+							queryParams.limit = limit;
+
+							let allTasks: IDataObject[] = [];
+							let currentPage = 1;
+							let hasMorePages = true;
+
+							while (hasMorePages) {
+								queryParams.page = currentPage;
+								const responseData = await taskPanoApiRequest.call(this, 'GET', endpoint, {}, queryParams);
+
+								const tasks = responseData.data?.tasks?.data || [];
+								allTasks = allTasks.concat(tasks);
+
+								const lastPage = responseData.data?.tasks?.last_page || 1;
+								hasMorePages = currentPage < lastPage;
+								currentPage++;
+							}
+
+							allTasks.forEach((task: IDataObject) => {
+								returnData.push({
+									json: task,
+									pairedItem: {
+										item: i,
+									},
+								});
+							});
+						} else {
+							const limit = this.getNodeParameter('limit', i) as number;
+							queryParams.limit = limit;
+							const responseData = await taskPanoApiRequest.call(this, 'GET', endpoint, {}, queryParams);
+
+							const tasks = responseData.data?.tasks?.data || [];
+
+							tasks.forEach((task: IDataObject) => {
+								returnData.push({
+									json: task,
+									pairedItem: {
+										item: i,
+									},
+								});
+							});
+						}
 					}
 
 					if (operation === 'updateTask') {
