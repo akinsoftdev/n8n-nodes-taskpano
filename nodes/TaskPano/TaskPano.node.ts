@@ -165,7 +165,7 @@ export class TaskPano implements INodeType {
 				displayOptions: {
 					show: {
 						operation: [
-							'create',
+							'createTask',
 							'createSubtask',
 							'addChecklistItem',
 							'addComment',
@@ -198,7 +198,7 @@ export class TaskPano implements INodeType {
 				type: 'options',
 				displayOptions: {
 					show: {
-						operation: ['create'],
+						operation: ['createTask'],
 						resource: ['task'],
 					},
 				},
@@ -250,7 +250,7 @@ export class TaskPano implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['create'],
+						operation: ['createTask'],
 						resource: ['task'],
 					},
 				},
@@ -336,7 +336,7 @@ export class TaskPano implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['create', 'createSubtask'],
+						operation: ['createTask', 'createSubtask'],
 						resource: ['task'],
 					},
 				},
