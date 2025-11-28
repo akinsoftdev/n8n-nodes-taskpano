@@ -159,66 +159,51 @@ export class TaskPano implements INodeType {
 				noDataExpression: true,
 			},
 			{
-				displayName: 'Organization Name or ID',
-				name: 'organizationId',
-				type: 'options',
-				displayOptions: {
-					show: {
-						operation: [
-							'createTask',
-							'createSubtask',
-							'addChecklistItem',
-							'addComment',
-							'addAssignee',
-							'addSubscription',
-							'addTag',
-							'removeAssignee',
-							'removeSubscription',
-							'removeTag',
-							'updateChecklistItem',
-							'updateChecklistItemStatus',
-							'updateTask',
-							'moveTask',
-							'getTask',
-							'getTasks',
-						],
-						resource: ['task'],
-					},
-				},
-				typeOptions: {
-					loadOptionsMethod: 'getOrganizations',
-				},
-				default: '',
-				required: false,
-				description: 'The organization to create the task in. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
-			},
-			{
-				displayName: 'Project Name or ID',
-				name: 'projectId',
-				type: 'options',
+				displayName: 'Options',
+				name: 'createTaskOptions',
+				type: 'collection',
+				placeholder: 'Add Option',
 				displayOptions: {
 					show: {
 						operation: ['createTask'],
 						resource: ['task'],
 					},
 				},
-				typeOptions: {
-					loadOptionsMethod: 'getProjects',
-					loadOptionsDependsOn: ['organizationId'],
-				},
-				default: '',
-				required: false,
-				description: 'The project to create the task in. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				default: {},
+				options: [
+					{
+						displayName: 'Organization Name or ID',
+						name: 'organizationId',
+						type: 'options',
+						typeOptions: {
+							loadOptionsMethod: 'getOrganizations',
+						},
+						default: '',
+						description: 'The organization to create the task in. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+					},
+					{
+						displayName: 'Project Name or ID',
+						name: 'projectId',
+						type: 'options',
+						typeOptions: {
+							loadOptionsMethod: 'getProjects',
+							loadOptionsDependsOn: ['createTaskOptions.organizationId'],
+						},
+						default: '',
+						description: 'The project to create the task in. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+					},
+				],
 			},
 			{
-				displayName: 'Project Name or ID',
-				name: 'projectNumericId',
-				type: 'options',
-				required: false,
+				displayName: 'Options',
+				name: 'taskOptions',
+				type: 'collection',
+				placeholder: 'Add Option',
 				displayOptions: {
 					show: {
 						operation: [
 							'createSubtask',
+							'getTask',
 							'addChecklistItem',
 							'addComment',
 							'addAssignee',
@@ -231,17 +216,34 @@ export class TaskPano implements INodeType {
 							'updateChecklistItemStatus',
 							'updateTask',
 							'moveTask',
-							'getTask',
 						],
 						resource: ['task'],
 					},
 				},
-				typeOptions: {
-					loadOptionsMethod: 'getProjectsNumeric',
-					loadOptionsDependsOn: ['organizationId'],
-				},
-				default: '',
-				description: 'Select the project by its numeric ID for subtask creation. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				default: {},
+				options: [
+					{
+						displayName: 'Organization Name or ID',
+						name: 'organizationId',
+						type: 'options',
+						typeOptions: {
+							loadOptionsMethod: 'getOrganizations',
+						},
+						default: '',
+						description: 'The organization. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+					},
+					{
+						displayName: 'Project Name or ID',
+						name: 'projectNumericId',
+						type: 'options',
+						typeOptions: {
+							loadOptionsMethod: 'getProjectsNumeric',
+							loadOptionsDependsOn: ['taskOptions.organizationId'],
+						},
+						default: '',
+						description: 'Select the project by its numeric ID. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+					},
+				],
 			},
 			{
 				displayName: 'List Name or ID',
@@ -256,7 +258,7 @@ export class TaskPano implements INodeType {
 				},
 				typeOptions: {
 					loadOptionsMethod: 'getLists',
-					loadOptionsDependsOn: ['projectId'],
+					loadOptionsDependsOn: ['createTaskOptions.projectId'],
 				},
 				default: '',
 				description: 'The list to create the task in. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
@@ -274,7 +276,7 @@ export class TaskPano implements INodeType {
 				},
 				typeOptions: {
 					loadOptionsMethod: 'getTasks',
-					loadOptionsDependsOn: ['projectNumericId'],
+					loadOptionsDependsOn: ['taskOptions.projectNumericId'],
 				},
 				default: '',
 				description: 'Select the parent task. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
@@ -306,7 +308,7 @@ export class TaskPano implements INodeType {
 				},
 				typeOptions: {
 					loadOptionsMethod: 'getTasks',
-					loadOptionsDependsOn: ['projectNumericId'],
+					loadOptionsDependsOn: ['taskOptions.projectNumericId'],
 				},
 				default: '',
 				description: 'Select the task to add the comment to. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
@@ -324,7 +326,7 @@ export class TaskPano implements INodeType {
 				},
 				typeOptions: {
 					loadOptionsMethod: 'getLists',
-					loadOptionsDependsOn: ['organizationId', 'projectNumericId'],
+					loadOptionsDependsOn: ['taskOptions.organizationId', 'taskOptions.projectNumericId'],
 				},
 				default: '',
 				description: 'Select the target list to move the task to. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
@@ -495,8 +497,8 @@ export class TaskPano implements INodeType {
 				typeOptions: {
 					loadOptionsMethod: 'getAvailableTags',
 					loadOptionsDependsOn: [
-						'organizationId',
-						'projectNumericId',
+						'taskOptions.organizationId',
+						'taskOptions.projectNumericId',
 						'taskId',
 					],
 				},
@@ -535,8 +537,8 @@ export class TaskPano implements INodeType {
 				typeOptions: {
 					loadOptionsMethod: 'getAvailableAssignees',
 					loadOptionsDependsOn: [
-						'organizationId',
-						'projectNumericId',
+						'taskOptions.organizationId',
+						'taskOptions.projectNumericId',
 						'taskId',
 					],
 				},
@@ -575,8 +577,8 @@ export class TaskPano implements INodeType {
 				typeOptions: {
 					loadOptionsMethod: 'getAvailableSubscriptions',
 					loadOptionsDependsOn: [
-						'organizationId',
-						'projectNumericId',
+						'taskOptions.organizationId',
+						'taskOptions.projectNumericId',
 						'taskId',
 					],
 				},
@@ -600,6 +602,23 @@ export class TaskPano implements INodeType {
 				},
 				default: '',
 				description: 'Select the subscription to remove from the task. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+			},
+			{
+				displayName: 'Organization Name or ID',
+				name: 'organizationId',
+				type: 'options',
+				required: true,
+				displayOptions: {
+					show: {
+						operation: ['getTasks'],
+						resource: ['task'],
+					},
+				},
+				typeOptions: {
+					loadOptionsMethod: 'getOrganizations',
+				},
+				default: '',
+				description: 'The organization to get tasks from. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 			},
 			{
 				displayName: 'Return All',
@@ -947,7 +966,8 @@ export class TaskPano implements INodeType {
 			},
 
 			async getProjects(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const organizationId = this.getCurrentNodeParameter('organizationId');
+				const options = this.getCurrentNodeParameter('createTaskOptions') as IDataObject;
+				const organizationId = options?.organizationId as string;
 
 				if (!organizationId) {
 					return [];
@@ -974,7 +994,8 @@ export class TaskPano implements INodeType {
 			},
 
 			async getProjectsNumeric(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const organizationId = this.getCurrentNodeParameter('organizationId');
+				const options = this.getCurrentNodeParameter('taskOptions') as IDataObject;
+				const organizationId = options?.organizationId as string;
 
 				if (!organizationId) {
 					return [];
@@ -1001,14 +1022,13 @@ export class TaskPano implements INodeType {
 			},
 
 			async getProjectsForFilters(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const organizationId = this.getCurrentNodeParameter('organizationId');
+				const organizationId = this.getCurrentNodeParameter('organizationId') as string;
+				const filters = this.getCurrentNodeParameter('filters') as IDataObject;
+				const folderId = filters?.folder_id;
 
 				if (!organizationId) {
 					return [];
 				}
-
-				const filters = this.getCurrentNodeParameter('filters') as IDataObject;
-				const folderId = filters?.folder_id;
 
 				try {
 					let response;
@@ -1054,8 +1074,19 @@ export class TaskPano implements INodeType {
 			},
 
 			async getLists(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const projectId = this.getCurrentNodeParameter('projectId');
-				const projectNumericId = this.getCurrentNodeParameter('projectNumericId');
+				const operation = this.getCurrentNodeParameter('operation') as string;
+				let projectId: string | undefined;
+				let projectNumericId: string | undefined;
+				let organizationId: string | undefined;
+
+				if (operation === 'createTask') {
+					const options = this.getCurrentNodeParameter('createTaskOptions') as IDataObject;
+					projectId = options?.projectId as string;
+				} else {
+					const options = this.getCurrentNodeParameter('taskOptions') as IDataObject;
+					organizationId = options?.organizationId as string;
+					projectNumericId = options?.projectNumericId as string;
+				}
 
 				if (!projectId && !projectNumericId) {
 					return [];
@@ -1067,9 +1098,10 @@ export class TaskPano implements INodeType {
 					if (projectId) {
 						projectHash = projectId as string;
 					} else {
-						const organizationId = this.getCurrentNodeParameter('organizationId');
-
-						projectHash = await getProjectHashFromNumericId.call(this, organizationId as string, projectNumericId as string);
+						if (!organizationId) {
+							return [];
+						}
+						projectHash = await getProjectHashFromNumericId.call(this, organizationId, projectNumericId as string);
 					}
 
 					const response = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/lists`);
@@ -1086,17 +1118,16 @@ export class TaskPano implements INodeType {
 			},
 
 			async getListsForFilters(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const organizationId = this.getCurrentNodeParameter('organizationId') as string;
 				const filters = this.getCurrentNodeParameter('filters') as IDataObject;
-				const projectNumericId = filters?.project_id;
+				const projectNumericId = filters?.project_id as string;
 
-				if (!projectNumericId) {
+				if (!projectNumericId || !organizationId) {
 					return [];
 				}
 
 				try {
-					const organizationId = this.getCurrentNodeParameter('organizationId');
-
-					const projectHash = await getProjectHashFromNumericId.call(this, organizationId as string, projectNumericId as string);
+					const projectHash = await getProjectHashFromNumericId.call(this, organizationId, projectNumericId);
 
 					const response = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/lists`);
 
@@ -1112,9 +1143,9 @@ export class TaskPano implements INodeType {
 			},
 
 			async getUsersForFilters(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const organizationId = this.getCurrentNodeParameter('organizationId') as string;
 				const filters = this.getCurrentNodeParameter('filters') as IDataObject;
-				const projectNumericId = filters?.project_id;
-				const organizationId = this.getCurrentNodeParameter('organizationId');
+				const projectNumericId = filters?.project_id as string;
 
 				if (!organizationId) {
 					return [];
@@ -1148,15 +1179,14 @@ export class TaskPano implements INodeType {
 			},
 
 			async getTagsForFilters(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const organizationId = this.getCurrentNodeParameter('organizationId');
+				const organizationId = this.getCurrentNodeParameter('organizationId') as string;
+				const filters = this.getCurrentNodeParameter('filters') as IDataObject;
+				const projectNumericId = filters?.project_id as string;
+				const folderId = filters?.folder_id;
 
 				if (!organizationId) {
 					return [];
 				}
-
-				const filters = this.getCurrentNodeParameter('filters') as IDataObject;
-				const projectNumericId = filters?.project_id;
-				const folderId = filters?.folder_id;
 
 				try {
 					const queryParams: IDataObject = {
@@ -1191,7 +1221,7 @@ export class TaskPano implements INodeType {
 			},
 
 			async getFoldersForFilters(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const organizationId = this.getCurrentNodeParameter('organizationId');
+				const organizationId = this.getCurrentNodeParameter('organizationId') as string;
 
 				if (!organizationId) {
 					return [];
@@ -1223,14 +1253,15 @@ export class TaskPano implements INodeType {
 			},
 
 			async getTasks(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const projectId = this.getCurrentNodeParameter('projectNumericId');
+				const options = this.getCurrentNodeParameter('taskOptions') as IDataObject;
+				const projectNumericId = options?.projectNumericId as string;
 
-				if (!projectId) {
+				if (!projectNumericId) {
 					return [];
 				}
 
 				try {
-					const tasks = await taskPanoApiRequestAllItems.call(this, '/tasks', 'tasks', {}, { project_id: projectId });
+					const tasks = await taskPanoApiRequestAllItems.call(this, '/tasks', 'tasks', {}, { project_id: projectNumericId });
 
 					return tasks.map((task: IDataObject) => ({
 						name: task.subject as string,
@@ -1263,16 +1294,17 @@ export class TaskPano implements INodeType {
 			},
 
 			async getAvailableTags(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const organizationId = this.getCurrentNodeParameter('organizationId');
-				const projectNumericId = this.getCurrentNodeParameter('projectNumericId');
-				const taskId = this.getCurrentNodeParameter('taskId');
+				const options = this.getCurrentNodeParameter('taskOptions') as IDataObject;
+				const organizationId = options?.organizationId as string;
+				const projectNumericId = options?.projectNumericId as string;
+				const taskId = this.getCurrentNodeParameter('taskId') as string;
 
 				if (!organizationId || !projectNumericId || !taskId) {
 					return [];
 				}
 
 				try {
-					const projectHash = await getProjectHashFromNumericId.call(this, organizationId as string, projectNumericId as string);
+					const projectHash = await getProjectHashFromNumericId.call(this, organizationId, projectNumericId);
 
 					const projectResponse = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/tags`);
 					const projectTags = projectResponse.data?.tags || [];
@@ -1315,16 +1347,17 @@ export class TaskPano implements INodeType {
 			},
 
 			async getAvailableAssignees(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const organizationId = this.getCurrentNodeParameter('organizationId');
-				const projectNumericId = this.getCurrentNodeParameter('projectNumericId');
-				const taskId = this.getCurrentNodeParameter('taskId');
+				const options = this.getCurrentNodeParameter('taskOptions') as IDataObject;
+				const organizationId = options?.organizationId as string;
+				const projectNumericId = options?.projectNumericId as string;
+				const taskId = this.getCurrentNodeParameter('taskId') as string;
 
 				if (!organizationId || !projectNumericId || !taskId) {
 					return [];
 				}
 
 				try {
-					const projectHash = await getProjectHashFromNumericId.call(this, organizationId as string, projectNumericId as string);
+					const projectHash = await getProjectHashFromNumericId.call(this, organizationId, projectNumericId);
 
 					const projectAssigneesResponse = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/assignees`);
 					const projectAssignees = projectAssigneesResponse.data?.projectAssignees || [];
@@ -1348,16 +1381,17 @@ export class TaskPano implements INodeType {
 			},
 
 			async getAvailableSubscriptions(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const organizationId = this.getCurrentNodeParameter('organizationId');
-				const projectNumericId = this.getCurrentNodeParameter('projectNumericId');
-				const taskId = this.getCurrentNodeParameter('taskId');
+				const options = this.getCurrentNodeParameter('taskOptions') as IDataObject;
+				const organizationId = options?.organizationId as string;
+				const projectNumericId = options?.projectNumericId as string;
+				const taskId = this.getCurrentNodeParameter('taskId') as string;
 
 				if (!organizationId || !projectNumericId || !taskId) {
 					return [];
 				}
 
 				try {
-					const projectHash = await getProjectHashFromNumericId.call(this, organizationId as string, projectNumericId as string);
+					const projectHash = await getProjectHashFromNumericId.call(this, organizationId, projectNumericId);
 
 					const projectAssigneesResponse = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/assignees`);
 					const projectAssignees = projectAssigneesResponse.data?.projectAssignees || [];
