@@ -3,13 +3,21 @@ import {
 	IExecuteFunctions,
 	ILoadOptionsFunctions,
 	INodeExecutionData,
+	INodeListSearchResult,
 	INodePropertyOptions,
 	INodeType,
 	INodeTypeDescription,
 	NodeConnectionType,
 	NodeOperationError,
 } from 'n8n-workflow';
-import { taskPanoApiRequest, taskPanoApiRequestAllItems, getProjectHashFromNumericId, getOrganizationNumericIdFromHash } from './GenericFunctions';
+import {
+	taskPanoApiRequest,
+	taskPanoApiRequestAllItems,
+	getProjectHashFromNumericId,
+	getOrganizationNumericIdFromHash,
+	loadLists,
+	loadTasks,
+} from './GenericFunctions';
 
 export class TaskPano implements INodeType {
 	description: INodeTypeDescription = {
@@ -248,44 +256,103 @@ export class TaskPano implements INodeType {
 			{
 				displayName: 'List Name or ID',
 				name: 'listId',
-				type: 'options',
+				type: 'resourceLocator',
 				required: true,
+				default: { mode: 'list' },
+				description: 'The list to create the task in. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				typeOptions: {
+					loadOptionsDependsOn: ['createTaskOptions.projectId'],
+				},
 				displayOptions: {
 					show: {
 						operation: ['createTask'],
 						resource: ['task'],
 					},
 				},
-				typeOptions: {
-					loadOptionsMethod: 'getLists',
-					loadOptionsDependsOn: ['createTaskOptions.projectId'],
-				},
-				default: '',
-				description: 'The list to create the task in. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				modes: [
+					{
+						displayName: 'ID',
+						name: 'id',
+						type: 'string',
+						validation: [
+							{
+								type: 'regex',
+								properties: {
+									regex: '^[0-9]+$',
+									errorMessage: 'List ID must be numeric',
+								},
+							},
+						],
+						hint: 'Enter a list ID',
+						placeholder: '12345',
+					},
+					{
+						displayName: 'From list',
+						name: 'list',
+						type: 'list',
+						typeOptions: {
+							searchListMethod: 'getLists',
+							searchable: true,
+							searchFilterRequired: false,
+						},
+					},
+				],
 			},
 			{
 				displayName: 'Parent Task Name or ID',
 				name: 'parentTaskId',
-				type: 'options',
+				type: 'resourceLocator',
 				required: true,
+				default: { mode: 'id' },
+				description: 'Select the parent task. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				typeOptions: {
+					loadOptionsDependsOn: ['taskOptions.projectNumericId'],
+				},
 				displayOptions: {
 					show: {
 						operation: ['createSubtask'],
 						resource: ['task'],
 					},
 				},
-				typeOptions: {
-					loadOptionsMethod: 'getTasks',
-					loadOptionsDependsOn: ['taskOptions.projectNumericId'],
-				},
-				default: '',
-				description: 'Select the parent task. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				modes: [
+					{
+						displayName: 'ID',
+						name: 'id',
+						type: 'string',
+						validation: [
+							{
+								type: 'regex',
+								properties: {
+									regex: '[a-zA-Z0-9]{8,}',
+									errorMessage: 'Not a valid TaskPano Task ID',
+								},
+							},
+						],
+						hint: 'Enter a task ID',
+						placeholder: 'G7jfdgY5',
+					},
+					{
+						displayName: 'From list',
+						name: 'list',
+						type: 'list',
+						typeOptions: {
+							searchListMethod: 'getTasks',
+							searchable: true,
+							searchFilterRequired: false,
+						},
+					},
+				],
 			},
 			{
 				displayName: 'Task Name or ID',
 				name: 'taskId',
-				type: 'options',
+				type: 'resourceLocator',
 				required: true,
+				default: { mode: 'id' },
+				description: 'Select the task. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				typeOptions: {
+					loadOptionsDependsOn: ['taskOptions.projectNumericId'],
+				},
 				displayOptions: {
 					show: {
 						operation: [
@@ -306,30 +373,79 @@ export class TaskPano implements INodeType {
 						resource: ['task'],
 					},
 				},
-				typeOptions: {
-					loadOptionsMethod: 'getTasks',
-					loadOptionsDependsOn: ['taskOptions.projectNumericId'],
-				},
-				default: '',
-				description: 'Select the task to add the comment to. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				modes: [
+					{
+						displayName: 'ID',
+						name: 'id',
+						type: 'string',
+						validation: [
+							{
+								type: 'regex',
+								properties: {
+									regex: '[a-zA-Z0-9]{8,}',
+									errorMessage: 'Not a valid TaskPano Task ID',
+								},
+							},
+						],
+						hint: 'Enter a task ID',
+						placeholder: 'G7jfdgY5',
+					},
+					{
+						displayName: 'From list',
+						name: 'list',
+						type: 'list',
+						typeOptions: {
+							searchListMethod: 'getTasks',
+							searchable: true,
+							searchFilterRequired: false,
+						},
+					},
+				],
 			},
 			{
 				displayName: 'Target List Name or ID',
 				name: 'targetListId',
-				type: 'options',
+				type: 'resourceLocator',
 				required: true,
+				default: { mode: 'list' },
+				description: 'Select the target list to move the task to. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				typeOptions: {
+					loadOptionsDependsOn: ['taskOptions.organizationId', 'taskOptions.projectNumericId'],
+				},
 				displayOptions: {
 					show: {
 						operation: ['moveTask'],
 						resource: ['task'],
 					},
 				},
-				typeOptions: {
-					loadOptionsMethod: 'getLists',
-					loadOptionsDependsOn: ['taskOptions.organizationId', 'taskOptions.projectNumericId'],
-				},
-				default: '',
-				description: 'Select the target list to move the task to. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				modes: [
+					{
+						displayName: 'ID',
+						name: 'id',
+						type: 'string',
+						validation: [
+							{
+								type: 'regex',
+								properties: {
+									regex: '^[0-9]+$',
+									errorMessage: 'List ID must be numeric',
+								},
+							},
+						],
+						hint: 'Enter a list ID',
+						placeholder: '12345',
+					},
+					{
+						displayName: 'From list',
+						name: 'list',
+						type: 'list',
+						typeOptions: {
+							searchListMethod: 'getLists',
+							searchable: true,
+							searchFilterRequired: false,
+						},
+					},
+				],
 			},
 			{
 				displayName: 'Task Name',
@@ -1073,49 +1189,7 @@ export class TaskPano implements INodeType {
 				}
 			},
 
-			async getLists(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const operation = this.getCurrentNodeParameter('operation') as string;
-				let projectId: string | undefined;
-				let projectNumericId: string | undefined;
-				let organizationId: string | undefined;
-
-				if (operation === 'createTask') {
-					const options = this.getCurrentNodeParameter('createTaskOptions') as IDataObject;
-					projectId = options?.projectId as string;
-				} else {
-					const options = this.getCurrentNodeParameter('taskOptions') as IDataObject;
-					organizationId = options?.organizationId as string;
-					projectNumericId = options?.projectNumericId as string;
-				}
-
-				if (!projectId && !projectNumericId) {
-					return [];
-				}
-
-				try {
-					let projectHash: string;
-
-					if (projectId) {
-						projectHash = projectId as string;
-					} else {
-						if (!organizationId) {
-							return [];
-						}
-						projectHash = await getProjectHashFromNumericId.call(this, organizationId, projectNumericId as string);
-					}
-
-					const response = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/lists`);
-
-					const lists = response.data?.lists || [];
-
-					return lists.map((list: IDataObject) => ({
-						name: list.name as string,
-						value: list.id as string,
-					}));
-				} catch (error) {
-					throw new NodeOperationError(this.getNode(), `Failed to load lists: ${error.message}`);
-				}
-			},
+			getLists: loadLists,
 
 			async getListsForFilters(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const organizationId = this.getCurrentNodeParameter('organizationId') as string;
@@ -1252,28 +1326,12 @@ export class TaskPano implements INodeType {
 				}
 			},
 
-			async getTasks(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const options = this.getCurrentNodeParameter('taskOptions') as IDataObject;
-				const projectNumericId = options?.projectNumericId as string;
-
-				if (!projectNumericId) {
-					return [];
-				}
-
-				try {
-					const tasks = await taskPanoApiRequestAllItems.call(this, '/tasks', 'tasks', {}, { project_id: projectNumericId });
-
-					return tasks.map((task: IDataObject) => ({
-						name: task.subject as string,
-						value: task.id_hash as string,
-					}));
-				} catch (error) {
-					throw new NodeOperationError(this.getNode(), `Failed to load tasks: ${error.message}`);
-				}
-			},
+			getTasks: loadTasks,
 
 			async getChecklistItems(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const taskId = this.getCurrentNodeParameter('taskId');
+				const taskId = this.getCurrentNodeParameter('taskId', {
+					extractValue: true,
+				}) as string | undefined;
 
 				if (!taskId) {
 					return [];
@@ -1297,7 +1355,9 @@ export class TaskPano implements INodeType {
 				const options = this.getCurrentNodeParameter('taskOptions') as IDataObject;
 				const organizationId = options?.organizationId as string;
 				const projectNumericId = options?.projectNumericId as string;
-				const taskId = this.getCurrentNodeParameter('taskId') as string;
+				const taskId = this.getCurrentNodeParameter('taskId', {
+					extractValue: true,
+				}) as string | undefined;
 
 				if (!organizationId || !projectNumericId || !taskId) {
 					return [];
@@ -1326,7 +1386,9 @@ export class TaskPano implements INodeType {
 			},
 
 			async getTaskTags(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const taskId = this.getCurrentNodeParameter('taskId');
+				const taskId = this.getCurrentNodeParameter('taskId', {
+					extractValue: true,
+				}) as string | undefined;
 
 				if (!taskId) {
 					return [];
@@ -1350,7 +1412,9 @@ export class TaskPano implements INodeType {
 				const options = this.getCurrentNodeParameter('taskOptions') as IDataObject;
 				const organizationId = options?.organizationId as string;
 				const projectNumericId = options?.projectNumericId as string;
-				const taskId = this.getCurrentNodeParameter('taskId') as string;
+				const taskId = this.getCurrentNodeParameter('taskId', {
+					extractValue: true,
+				}) as string | undefined;
 
 				if (!organizationId || !projectNumericId || !taskId) {
 					return [];
@@ -1384,7 +1448,9 @@ export class TaskPano implements INodeType {
 				const options = this.getCurrentNodeParameter('taskOptions') as IDataObject;
 				const organizationId = options?.organizationId as string;
 				const projectNumericId = options?.projectNumericId as string;
-				const taskId = this.getCurrentNodeParameter('taskId') as string;
+				const taskId = this.getCurrentNodeParameter('taskId', {
+					extractValue: true,
+				}) as string | undefined;
 
 				if (!organizationId || !projectNumericId || !taskId) {
 					return [];
@@ -1419,7 +1485,9 @@ export class TaskPano implements INodeType {
 			},
 
 			async getTaskAssignees(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const taskId = this.getCurrentNodeParameter('taskId');
+				const taskId = this.getCurrentNodeParameter('taskId', {
+					extractValue: true,
+				}) as string | undefined;
 
 				if (!taskId) {
 					return [];
@@ -1440,7 +1508,9 @@ export class TaskPano implements INodeType {
 			},
 
 			async getTaskSubscriptions(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const taskId = this.getCurrentNodeParameter('taskId');
+				const taskId = this.getCurrentNodeParameter('taskId', {
+					extractValue: true,
+				}) as string | undefined;
 
 				if (!taskId) {
 					return [];
@@ -1460,6 +1530,22 @@ export class TaskPano implements INodeType {
 				}
 			},
 		},
+		listSearch: {
+			async getLists(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
+				const results = await loadLists.call(this, filter);
+
+				return {
+					results,
+				};
+			},
+		async getTasks(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
+			const results = await loadTasks.call(this, filter);
+
+			return {
+				results,
+			};
+		},
+		},
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
@@ -1473,7 +1559,9 @@ export class TaskPano implements INodeType {
 			try {
 				if (resource === 'task') {
 					if (operation === 'createTask') {
-						const listId = this.getNodeParameter('listId', i) as string;
+						const listId = this.getNodeParameter('listId', i, undefined, {
+							extractValue: true,
+						}) as string;
 						const name = this.getNodeParameter('name', i) as string;
 
 						const body: IDataObject = {
@@ -1492,7 +1580,9 @@ export class TaskPano implements INodeType {
 					}
 
 					if (operation === 'createSubtask') {
-						const parentTaskId = this.getNodeParameter('parentTaskId', i) as string;
+						const parentTaskId = this.getNodeParameter('parentTaskId', i, undefined, {
+							extractValue: true,
+						}) as string;
 						const name = this.getNodeParameter('name', i) as string;
 
 						const body: IDataObject = {
@@ -1510,7 +1600,9 @@ export class TaskPano implements INodeType {
 					}
 
 					if (operation === 'getTask') {
-						const taskId = this.getNodeParameter('taskId', i) as string;
+						const taskId = this.getNodeParameter('taskId', i, undefined, {
+							extractValue: true,
+						}) as string;
 
 						const responseData = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/show`);
 
@@ -1649,7 +1741,9 @@ export class TaskPano implements INodeType {
 					}
 
 					if (operation === 'updateTask') {
-						const taskId = this.getNodeParameter('taskId', i) as string;
+						const taskId = this.getNodeParameter('taskId', i, undefined, {
+							extractValue: true,
+						}) as string;
 						const additionalFields = this.getNodeParameter('additionalFields', i) as IDataObject;
 
 						const body: IDataObject = {
@@ -1667,8 +1761,12 @@ export class TaskPano implements INodeType {
 					}
 
 					if (operation === 'moveTask') {
-						const taskId = this.getNodeParameter('taskId', i) as string;
-						const targetListId = this.getNodeParameter('targetListId', i) as string;
+						const taskId = this.getNodeParameter('taskId', i, undefined, {
+							extractValue: true,
+						}) as string;
+						const targetListId = this.getNodeParameter('targetListId', i, undefined, {
+							extractValue: true,
+						}) as string;
 
 						const responseData = await taskPanoApiRequest.call(this, 'PATCH', `/tasks/${taskId}/move/${targetListId}`);
 
@@ -1681,7 +1779,9 @@ export class TaskPano implements INodeType {
 					}
 
 					if (operation === 'addChecklistItem') {
-						const taskId = this.getNodeParameter('taskId', i) as string;
+						const taskId = this.getNodeParameter('taskId', i, undefined, {
+							extractValue: true,
+						}) as string;
 						const checklistItem = this.getNodeParameter('checklistItem', i) as string;
 
 						const body: IDataObject = {
@@ -1699,7 +1799,9 @@ export class TaskPano implements INodeType {
 					}
 
 					if (operation === 'addComment') {
-						const taskId = this.getNodeParameter('taskId', i) as string;
+						const taskId = this.getNodeParameter('taskId', i, undefined, {
+							extractValue: true,
+						}) as string;
 						const comment = this.getNodeParameter('comment', i) as string;
 
 						const body: IDataObject = {
@@ -1717,7 +1819,9 @@ export class TaskPano implements INodeType {
 					}
 
 					if (operation === 'updateChecklistItem') {
-						const taskId = this.getNodeParameter('taskId', i) as string;
+						const taskId = this.getNodeParameter('taskId', i, undefined, {
+							extractValue: true,
+						}) as string;
 						const checklistItemId = this.getNodeParameter('checklistItemId', i) as string;
 						const newSubject = this.getNodeParameter('newSubject', i) as string;
 
@@ -1736,7 +1840,9 @@ export class TaskPano implements INodeType {
 					}
 
 					if (operation === 'updateChecklistItemStatus') {
-						const taskId = this.getNodeParameter('taskId', i) as string;
+						const taskId = this.getNodeParameter('taskId', i, undefined, {
+							extractValue: true,
+						}) as string;
 						const checklistItemId = this.getNodeParameter('checklistItemId', i) as string;
 						const status = this.getNodeParameter('checklistItemStatus', i) as boolean;
 
@@ -1755,7 +1861,9 @@ export class TaskPano implements INodeType {
 					}
 
 					if (operation === 'addTag') {
-						const taskId = this.getNodeParameter('taskId', i) as string;
+						const taskId = this.getNodeParameter('taskId', i, undefined, {
+							extractValue: true,
+						}) as string;
 						const tagId = this.getNodeParameter('tagId', i) as string;
 
 						const body: IDataObject = {
@@ -1773,7 +1881,9 @@ export class TaskPano implements INodeType {
 					}
 
 					if (operation === 'removeTag') {
-						const taskId = this.getNodeParameter('taskId', i) as string;
+						const taskId = this.getNodeParameter('taskId', i, undefined, {
+							extractValue: true,
+						}) as string;
 						const taskTagId = this.getNodeParameter('taskTagId', i) as string;
 
 						const responseData = await taskPanoApiRequest.call(this, 'DELETE', `/tasks/${taskId}/tags/${taskTagId}`);
@@ -1787,7 +1897,9 @@ export class TaskPano implements INodeType {
 					}
 
 					if (operation === 'addAssignee') {
-						const taskId = this.getNodeParameter('taskId', i) as string;
+						const taskId = this.getNodeParameter('taskId', i, undefined, {
+							extractValue: true,
+						}) as string;
 						const assigneeId = this.getNodeParameter('assigneeId', i) as string;
 
 						const body: IDataObject = {
@@ -1805,7 +1917,9 @@ export class TaskPano implements INodeType {
 					}
 
 					if (operation === 'removeAssignee') {
-						const taskId = this.getNodeParameter('taskId', i) as string;
+						const taskId = this.getNodeParameter('taskId', i, undefined, {
+							extractValue: true,
+						}) as string;
 						const taskAssigneeId = this.getNodeParameter('taskAssigneeId', i) as string;
 
 						const responseData = await taskPanoApiRequest.call(this, 'DELETE', `/tasks/${taskId}/assignees/${taskAssigneeId}`);
@@ -1819,7 +1933,9 @@ export class TaskPano implements INodeType {
 					}
 
 					if (operation === 'addSubscription') {
-						const taskId = this.getNodeParameter('taskId', i) as string;
+						const taskId = this.getNodeParameter('taskId', i, undefined, {
+							extractValue: true,
+						}) as string;
 						const subscriptionId = this.getNodeParameter('subscriptionId', i) as string;
 
 						const body: IDataObject = {
@@ -1837,7 +1953,9 @@ export class TaskPano implements INodeType {
 					}
 
 					if (operation === 'removeSubscription') {
-						const taskId = this.getNodeParameter('taskId', i) as string;
+						const taskId = this.getNodeParameter('taskId', i, undefined, {
+							extractValue: true,
+						}) as string;
 						const taskSubscriptionId = this.getNodeParameter('taskSubscriptionId', i) as string;
 
 						const responseData = await taskPanoApiRequest.call(this, 'DELETE', `/tasks/${taskId}/subscriptions/${taskSubscriptionId}`);
