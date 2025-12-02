@@ -501,20 +501,47 @@ export class TaskPano implements INodeType {
 			{
 				displayName: 'Checklist Item Name or ID',
 				name: 'checklistItemId',
-				type: 'options',
+				type: 'resourceLocator',
 				required: true,
+				default: { mode: 'list' },
+				description: 'Select the checklist item to update. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				typeOptions: {
+					loadOptionsDependsOn: ['taskId'],
+				},
 				displayOptions: {
 					show: {
 						operation: ['updateChecklistItem', 'updateChecklistItemStatus'],
 						resource: ['task'],
 					},
 				},
-				typeOptions: {
-					loadOptionsMethod: 'getChecklistItems',
-					loadOptionsDependsOn: ['taskId'],
-				},
-				default: '',
-				description: 'Select the checklist item to update. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				modes: [
+					{
+						displayName: 'ID',
+						name: 'id',
+						type: 'string',
+						validation: [
+							{
+								type: 'regex',
+								properties: {
+									regex: '^[0-9]+$',
+									errorMessage: 'Checklist item ID must be numeric',
+								},
+							},
+						],
+						hint: 'Enter a checklist item ID',
+						placeholder: '12345',
+					},
+					{
+						displayName: 'From list',
+						name: 'list',
+						type: 'list',
+						typeOptions: {
+							searchListMethod: 'getChecklistItems',
+							searchable: true,
+							searchFilterRequired: false,
+						},
+					},
+				],
 			},
 			{
 				displayName: 'New Subject',
@@ -1364,29 +1391,6 @@ export class TaskPano implements INodeType {
 
 			getTasks: loadTasks,
 
-			async getChecklistItems(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const taskId = this.getCurrentNodeParameter('taskId', {
-					extractValue: true,
-				}) as string | undefined;
-
-				if (!taskId) {
-					return [];
-				}
-
-				try {
-					const response = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/checklists`);
-
-					const checklistItems = response.data?.checklists || [];
-
-					return checklistItems.map((item: IDataObject) => ({
-						name: item.subject as string,
-						value: item.id as string,
-					}));
-				} catch (error) {
-					throw new NodeOperationError(this.getNode(), `Failed to load checklist items: ${error.message}`);
-				}
-			},
-
 			async getAvailableAssignees(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const options = this.getCurrentNodeParameter('taskOptions') as IDataObject;
 				const organizationId = options?.organizationId as string;
@@ -1595,6 +1599,37 @@ export class TaskPano implements INodeType {
 					return { results };
 				} catch (error) {
 					throw new NodeOperationError(this.getNode(), `Failed to load task tags: ${error.message}`);
+				}
+			},
+			async getChecklistItems(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
+				const taskId = this.getCurrentNodeParameter('taskId', {
+					extractValue: true,
+				}) as string | undefined;
+
+				if (!taskId) {
+					return { results: [] };
+				}
+
+				try {
+					const response = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/checklists`);
+
+					let checklistItems = response.data?.checklists || [];
+
+					if (filter) {
+						const filterLc = filter.toLowerCase();
+						checklistItems = checklistItems.filter((item: IDataObject) =>
+							(item.subject as string).toLowerCase().includes(filterLc)
+						);
+					}
+
+					const results = checklistItems.map((item: IDataObject) => ({
+						name: item.subject as string,
+						value: item.id as string,
+					}));
+
+					return { results };
+				} catch (error) {
+					throw new NodeOperationError(this.getNode(), `Failed to load checklist items: ${error.message}`);
 				}
 			},
 		},
@@ -1874,7 +1909,9 @@ export class TaskPano implements INodeType {
 						const taskId = this.getNodeParameter('taskId', i, undefined, {
 							extractValue: true,
 						}) as string;
-						const checklistItemId = this.getNodeParameter('checklistItemId', i) as string;
+						const checklistItemId = this.getNodeParameter('checklistItemId', i, undefined, {
+							extractValue: true,
+						}) as string;
 						const newSubject = this.getNodeParameter('newSubject', i) as string;
 
 						const body: IDataObject = {
@@ -1895,7 +1932,9 @@ export class TaskPano implements INodeType {
 						const taskId = this.getNodeParameter('taskId', i, undefined, {
 							extractValue: true,
 						}) as string;
-						const checklistItemId = this.getNodeParameter('checklistItemId', i) as string;
+						const checklistItemId = this.getNodeParameter('checklistItemId', i, undefined, {
+							extractValue: true,
+						}) as string;
 						const status = this.getNodeParameter('checklistItemStatus', i) as boolean;
 
 						const body: IDataObject = {
