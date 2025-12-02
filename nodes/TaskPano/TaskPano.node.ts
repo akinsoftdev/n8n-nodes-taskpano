@@ -723,82 +723,190 @@ export class TaskPano implements INodeType {
 			{
 				displayName: 'Assignee Name or ID',
 				name: 'assigneeId',
-				type: 'options',
+				type: 'resourceLocator',
 				required: true,
+				default: { mode: 'list' },
+				description: 'Select the assignee to add to the task. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				typeOptions: {
+					loadOptionsDependsOn: [
+						'taskOptions.organizationId',
+						'taskOptions.projectNumericId',
+						'taskId',
+					],
+				},
 				displayOptions: {
 					show: {
 						operation: ['addAssignee'],
 						resource: ['task'],
 					},
 				},
-				typeOptions: {
-					loadOptionsMethod: 'getAvailableAssignees',
-					loadOptionsDependsOn: [
-						'taskOptions.organizationId',
-						'taskOptions.projectNumericId',
-						'taskId',
-					],
-				},
-				default: '',
-				description: 'Select the assignee to add to the task. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				modes: [
+					{
+						displayName: 'ID',
+						name: 'id',
+						type: 'string',
+						validation: [
+							{
+								type: 'regex',
+								properties: {
+									regex: '^[0-9]+$',
+									errorMessage: 'Assignee ID must be numeric',
+								},
+							},
+						],
+						hint: 'Enter an assignee ID',
+						placeholder: '12345',
+					},
+					{
+						displayName: 'From list',
+						name: 'list',
+						type: 'list',
+						typeOptions: {
+							searchListMethod: 'getAvailableAssignees',
+							searchable: true,
+							searchFilterRequired: false,
+						},
+					},
+				],
 			},
 			{
 				displayName: 'Assignee Name or ID',
 				name: 'taskAssigneeId',
-				type: 'options',
+				type: 'resourceLocator',
 				required: true,
+				default: { mode: 'list' },
+				description: 'Select the assignee to remove from the task. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				typeOptions: {
+					loadOptionsDependsOn: ['taskId'],
+				},
 				displayOptions: {
 					show: {
 						operation: ['removeAssignee'],
 						resource: ['task'],
 					},
 				},
-				typeOptions: {
-					loadOptionsMethod: 'getTaskAssignees',
-					loadOptionsDependsOn: ['taskId'],
-				},
-				default: '',
-				description: 'Select the assignee to remove from the task. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				modes: [
+					{
+						displayName: 'ID',
+						name: 'id',
+						type: 'string',
+						validation: [
+							{
+								type: 'regex',
+								properties: {
+									regex: '^[0-9]+$',
+									errorMessage: 'Assignee ID must be numeric',
+								},
+							},
+						],
+						hint: 'Enter an assignee ID',
+						placeholder: '12345',
+					},
+					{
+						displayName: 'From list',
+						name: 'list',
+						type: 'list',
+						typeOptions: {
+							searchListMethod: 'getTaskAssignees',
+							searchable: true,
+							searchFilterRequired: false,
+						},
+					},
+				],
 			},
 			{
 				displayName: 'Subscription Name or ID',
 				name: 'subscriptionId',
-				type: 'options',
+				type: 'resourceLocator',
 				required: true,
-				displayOptions: {
-					show: {
-						operation: ['addSubscription'],
-						resource: ['task'],
-					},
-				},
+				default: { mode: 'list' },
+				description: 'Select the subscription to add to the task. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 				typeOptions: {
-					loadOptionsMethod: 'getAvailableSubscriptions',
 					loadOptionsDependsOn: [
 						'taskOptions.organizationId',
 						'taskOptions.projectNumericId',
 						'taskId',
 					],
 				},
-				default: '',
-				description: 'Select the subscription to add to the task. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				displayOptions: {
+					show: {
+						operation: ['addSubscription'],
+						resource: ['task'],
+					},
+				},
+				modes: [
+					{
+						displayName: 'ID',
+						name: 'id',
+						type: 'string',
+						validation: [
+							{
+								type: 'regex',
+								properties: {
+									regex: '^[0-9]+$',
+									errorMessage: 'Subscription ID must be numeric',
+								},
+							},
+						],
+						hint: 'Enter a subscription ID',
+						placeholder: '12345',
+					},
+					{
+						displayName: 'From list',
+						name: 'list',
+						type: 'list',
+						typeOptions: {
+							searchListMethod: 'getAvailableSubscriptions',
+							searchable: true,
+							searchFilterRequired: false,
+						},
+					},
+				],
 			},
 			{
 				displayName: 'Subscription Name or ID',
 				name: 'taskSubscriptionId',
-				type: 'options',
+				type: 'resourceLocator',
 				required: true,
+				default: { mode: 'list' },
+				description: 'Select the subscription to remove from the task. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				typeOptions: {
+					loadOptionsDependsOn: ['taskId'],
+				},
 				displayOptions: {
 					show: {
 						operation: ['removeSubscription'],
 						resource: ['task'],
 					},
 				},
-				typeOptions: {
-					loadOptionsMethod: 'getTaskSubscriptions',
-					loadOptionsDependsOn: ['taskId'],
-				},
-				default: '',
-				description: 'Select the subscription to remove from the task. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				modes: [
+					{
+						displayName: 'ID',
+						name: 'id',
+						type: 'string',
+						validation: [
+							{
+								type: 'regex',
+								properties: {
+									regex: '^[0-9]+$',
+									errorMessage: 'Subscription ID must be numeric',
+								},
+							},
+						],
+						hint: 'Enter a subscription ID',
+						placeholder: '12345',
+					},
+					{
+						displayName: 'From list',
+						name: 'list',
+						type: 'list',
+						typeOptions: {
+							searchListMethod: 'getTaskSubscriptions',
+							searchable: true,
+							searchFilterRequired: false,
+						},
+					},
+				],
 			},
 			{
 				displayName: 'Organization Name or ID',
@@ -1408,128 +1516,6 @@ export class TaskPano implements INodeType {
 			},
 
 			getTasks: loadTasks,
-
-			async getAvailableAssignees(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const options = this.getCurrentNodeParameter('taskOptions') as IDataObject;
-				const organizationId = options?.organizationId as string;
-				const projectNumericId = options?.projectNumericId as string;
-				const taskId = this.getCurrentNodeParameter('taskId', {
-					extractValue: true,
-				}) as string | undefined;
-
-				if (!organizationId || !projectNumericId || !taskId) {
-					return [];
-				}
-
-				try {
-					const projectHash = await getProjectHashFromNumericId.call(this, organizationId, projectNumericId);
-
-					const projectAssigneesResponse = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/assignees`);
-					const projectAssignees = projectAssigneesResponse.data?.projectAssignees || [];
-
-					const taskAssigneesResponse = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/assignees`);
-					const taskAssignees = taskAssigneesResponse.data?.assignees || [];
-
-					const currentTaskAssigneeIds = new Set(taskAssignees.map((assignee: IDataObject) => assignee.id));
-
-					const availableAssignees = projectAssignees.filter((assignee: IDataObject) =>
-						!currentTaskAssigneeIds.has(assignee.id)
-					);
-
-					return availableAssignees.map((assignee: IDataObject) => ({
-						name: assignee.name as string,
-						value: assignee.id as string,
-					}));
-				} catch (error) {
-					throw new NodeOperationError(this.getNode(), `Failed to load available assignees: ${error.message}`);
-				}
-			},
-
-			async getAvailableSubscriptions(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const options = this.getCurrentNodeParameter('taskOptions') as IDataObject;
-				const organizationId = options?.organizationId as string;
-				const projectNumericId = options?.projectNumericId as string;
-				const taskId = this.getCurrentNodeParameter('taskId', {
-					extractValue: true,
-				}) as string | undefined;
-
-				if (!organizationId || !projectNumericId || !taskId) {
-					return [];
-				}
-
-				try {
-					const projectHash = await getProjectHashFromNumericId.call(this, organizationId, projectNumericId);
-
-					const projectAssigneesResponse = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/assignees`);
-					const projectAssignees = projectAssigneesResponse.data?.projectAssignees || [];
-
-					const taskAssigneesResponse = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/assignees`);
-					const taskAssignees = taskAssigneesResponse.data?.assignees || [];
-
-					const taskSubscriptionsResponse = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/subscriptions`);
-					const taskSubscriptions = taskSubscriptionsResponse.data?.subscriptions || [];
-
-					const currentTaskAssigneeIds = new Set(taskAssignees.map((assignee: IDataObject) => assignee.id));
-					const currentTaskSubscriptionIds = new Set(taskSubscriptions.map((subscription: IDataObject) => subscription.id));
-
-					const availableSubscriptions = projectAssignees.filter((assignee: IDataObject) =>
-						!currentTaskSubscriptionIds.has(assignee.id) && !currentTaskAssigneeIds.has(assignee.id)
-					);
-
-					return availableSubscriptions.map((assignee: IDataObject) => ({
-						name: assignee.name as string,
-						value: assignee.id as string,
-					}));
-				} catch (error) {
-					throw new NodeOperationError(this.getNode(), `Failed to load available subscriptions: ${error.message}`);
-				}
-			},
-
-			async getTaskAssignees(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const taskId = this.getCurrentNodeParameter('taskId', {
-					extractValue: true,
-				}) as string | undefined;
-
-				if (!taskId) {
-					return [];
-				}
-
-				try {
-					const response = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/assignees`);
-
-					const taskAssignees = response.data?.assignees || [];
-
-					return taskAssignees.map((assignee: IDataObject) => ({
-						name: assignee.name as string,
-						value: assignee.id as string,
-					}));
-				} catch (error) {
-					throw new NodeOperationError(this.getNode(), `Failed to load task assignees: ${error.message}`);
-				}
-			},
-
-			async getTaskSubscriptions(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const taskId = this.getCurrentNodeParameter('taskId', {
-					extractValue: true,
-				}) as string | undefined;
-
-				if (!taskId) {
-					return [];
-				}
-
-				try {
-					const response = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/subscriptions`);
-
-					const taskSubscriptions = response.data?.subscriptions || [];
-
-					return taskSubscriptions.map((subscription: IDataObject) => ({
-						name: subscription.name as string,
-						value: subscription.id as string,
-					}));
-				} catch (error) {
-					throw new NodeOperationError(this.getNode(), `Failed to load task subscriptions: ${error.message}`);
-				}
-			},
 		},
 		listSearch: {
 			async getLists(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
@@ -1648,6 +1634,160 @@ export class TaskPano implements INodeType {
 					return { results };
 				} catch (error) {
 					throw new NodeOperationError(this.getNode(), `Failed to load checklist items: ${error.message}`);
+				}
+			},
+			async getAvailableAssignees(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
+				const options = this.getCurrentNodeParameter('taskOptions') as IDataObject;
+				const organizationId = options?.organizationId as string;
+				const projectNumericId = options?.projectNumericId as string;
+				const taskId = this.getCurrentNodeParameter('taskId', {
+					extractValue: true,
+				}) as string | undefined;
+
+				if (!organizationId || !projectNumericId || !taskId) {
+					return { results: [] };
+				}
+
+				try {
+					const projectHash = await getProjectHashFromNumericId.call(this, organizationId, projectNumericId);
+
+					const projectAssigneesResponse = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/assignees`);
+					const projectAssignees = projectAssigneesResponse.data?.projectAssignees || [];
+
+					const taskAssigneesResponse = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/assignees`);
+					const taskAssignees = taskAssigneesResponse.data?.assignees || [];
+
+					const currentTaskAssigneeIds = new Set(taskAssignees.map((assignee: IDataObject) => assignee.id));
+
+					let availableAssignees = projectAssignees.filter((assignee: IDataObject) =>
+						!currentTaskAssigneeIds.has(assignee.id)
+					);
+
+					if (filter) {
+						const filterLc = filter.toLowerCase();
+						availableAssignees = availableAssignees.filter((assignee: IDataObject) =>
+							(assignee.name as string).toLowerCase().includes(filterLc)
+						);
+					}
+
+					const results = availableAssignees.map((assignee: IDataObject) => ({
+						name: assignee.name as string,
+						value: assignee.id as string,
+					}));
+
+					return { results };
+				} catch (error) {
+					throw new NodeOperationError(this.getNode(), `Failed to load available assignees: ${error.message}`);
+				}
+			},
+			async getTaskAssignees(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
+				const taskId = this.getCurrentNodeParameter('taskId', {
+					extractValue: true,
+				}) as string | undefined;
+
+				if (!taskId) {
+					return { results: [] };
+				}
+
+				try {
+					const response = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/assignees`);
+
+					let taskAssignees = response.data?.assignees || [];
+
+					if (filter) {
+						const filterLc = filter.toLowerCase();
+						taskAssignees = taskAssignees.filter((assignee: IDataObject) =>
+							(assignee.name as string).toLowerCase().includes(filterLc)
+						);
+					}
+
+					const results = taskAssignees.map((assignee: IDataObject) => ({
+						name: assignee.name as string,
+						value: assignee.id as string,
+					}));
+
+					return { results };
+				} catch (error) {
+					throw new NodeOperationError(this.getNode(), `Failed to load task assignees: ${error.message}`);
+				}
+			},
+			async getAvailableSubscriptions(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
+				const options = this.getCurrentNodeParameter('taskOptions') as IDataObject;
+				const organizationId = options?.organizationId as string;
+				const projectNumericId = options?.projectNumericId as string;
+				const taskId = this.getCurrentNodeParameter('taskId', {
+					extractValue: true,
+				}) as string | undefined;
+
+				if (!organizationId || !projectNumericId || !taskId) {
+					return { results: [] };
+				}
+
+				try {
+					const projectHash = await getProjectHashFromNumericId.call(this, organizationId, projectNumericId);
+
+					const projectAssigneesResponse = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/assignees`);
+					const projectAssignees = projectAssigneesResponse.data?.projectAssignees || [];
+
+					const taskAssigneesResponse = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/assignees`);
+					const taskAssignees = taskAssigneesResponse.data?.assignees || [];
+
+					const taskSubscriptionsResponse = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/subscriptions`);
+					const taskSubscriptions = taskSubscriptionsResponse.data?.subscriptions || [];
+
+					const currentTaskAssigneeIds = new Set(taskAssignees.map((assignee: IDataObject) => assignee.id));
+					const currentTaskSubscriptionIds = new Set(taskSubscriptions.map((subscription: IDataObject) => subscription.id));
+
+					let availableSubscriptions = projectAssignees.filter((assignee: IDataObject) =>
+						!currentTaskSubscriptionIds.has(assignee.id) && !currentTaskAssigneeIds.has(assignee.id)
+					);
+
+					if (filter) {
+						const filterLc = filter.toLowerCase();
+						availableSubscriptions = availableSubscriptions.filter((assignee: IDataObject) =>
+							(assignee.name as string).toLowerCase().includes(filterLc)
+						);
+					}
+
+					const results = availableSubscriptions.map((assignee: IDataObject) => ({
+						name: assignee.name as string,
+						value: assignee.id as string,
+					}));
+
+					return { results };
+				} catch (error) {
+					throw new NodeOperationError(this.getNode(), `Failed to load available subscriptions: ${error.message}`);
+				}
+			},
+			async getTaskSubscriptions(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
+				const taskId = this.getCurrentNodeParameter('taskId', {
+					extractValue: true,
+				}) as string | undefined;
+
+				if (!taskId) {
+					return { results: [] };
+				}
+
+				try {
+					const response = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/subscriptions`);
+
+					let taskSubscriptions = response.data?.subscriptions || [];
+
+					if (filter) {
+						const filterLc = filter.toLowerCase();
+						taskSubscriptions = taskSubscriptions.filter((subscription: IDataObject) =>
+							(subscription.name as string).toLowerCase().includes(filterLc)
+						);
+					}
+
+					const results = taskSubscriptions.map((subscription: IDataObject) => ({
+						name: subscription.name as string,
+						value: subscription.id as string,
+					}));
+
+					return { results };
+				} catch (error) {
+					throw new NodeOperationError(this.getNode(), `Failed to load task subscriptions: ${error.message}`);
 				}
 			},
 		},
@@ -2013,7 +2153,9 @@ export class TaskPano implements INodeType {
 						const taskId = this.getNodeParameter('taskId', i, undefined, {
 							extractValue: true,
 						}) as string;
-						const assigneeId = this.getNodeParameter('assigneeId', i) as string;
+						const assigneeId = this.getNodeParameter('assigneeId', i, undefined, {
+							extractValue: true,
+						}) as string;
 
 						const body: IDataObject = {
 							user_id: parseInt(assigneeId, 10),
@@ -2033,7 +2175,9 @@ export class TaskPano implements INodeType {
 						const taskId = this.getNodeParameter('taskId', i, undefined, {
 							extractValue: true,
 						}) as string;
-						const taskAssigneeId = this.getNodeParameter('taskAssigneeId', i) as string;
+						const taskAssigneeId = this.getNodeParameter('taskAssigneeId', i, undefined, {
+							extractValue: true,
+						}) as string;
 
 						const responseData = await taskPanoApiRequest.call(this, 'DELETE', `/tasks/${taskId}/assignees/${taskAssigneeId}`);
 
@@ -2049,7 +2193,9 @@ export class TaskPano implements INodeType {
 						const taskId = this.getNodeParameter('taskId', i, undefined, {
 							extractValue: true,
 						}) as string;
-						const subscriptionId = this.getNodeParameter('subscriptionId', i) as string;
+						const subscriptionId = this.getNodeParameter('subscriptionId', i, undefined, {
+							extractValue: true,
+						}) as string;
 
 						const body: IDataObject = {
 							user_id: parseInt(subscriptionId, 10),
@@ -2069,7 +2215,9 @@ export class TaskPano implements INodeType {
 						const taskId = this.getNodeParameter('taskId', i, undefined, {
 							extractValue: true,
 						}) as string;
-						const taskSubscriptionId = this.getNodeParameter('taskSubscriptionId', i) as string;
+						const taskSubscriptionId = this.getNodeParameter('taskSubscriptionId', i, undefined, {
+							extractValue: true,
+						}) as string;
 
 						const responseData = await taskPanoApiRequest.call(this, 'DELETE', `/tasks/${taskId}/subscriptions/${taskSubscriptionId}`);
 
