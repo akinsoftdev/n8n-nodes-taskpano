@@ -651,6 +651,15 @@ export class TaskPano implements INodeType {
 						displayName: 'ID',
 						name: 'id',
 						type: 'string',
+						validation: [
+							{
+								type: 'regex',
+								properties: {
+									regex: '^[0-9]+$',
+									errorMessage: 'Tag ID must be numeric',
+								},
+							},
+						],
 						hint: 'Enter a tag ID',
 						placeholder: '98765',
 					},
@@ -687,6 +696,15 @@ export class TaskPano implements INodeType {
 						displayName: 'ID',
 						name: 'id',
 						type: 'string',
+						validation: [
+							{
+								type: 'regex',
+								properties: {
+									regex: '^[0-9]+$',
+									errorMessage: 'Tag ID must be numeric',
+								},
+							},
+						],
 						hint: 'Enter a tag ID',
 						placeholder: '98765',
 					},
