@@ -602,42 +602,78 @@ export class TaskPano implements INodeType {
 			{
 				displayName: 'Tag Name or ID',
 				name: 'tagId',
-				type: 'options',
+				type: 'resourceLocator',
 				required: true,
-				displayOptions: {
-					show: {
-						operation: ['addTag'],
-						resource: ['task'],
-					},
-				},
+				default: { mode: 'list' },
+				description: 'Select the tag to add to the task. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 				typeOptions: {
-					loadOptionsMethod: 'getAvailableTags',
 					loadOptionsDependsOn: [
 						'taskOptions.organizationId',
 						'taskOptions.projectNumericId',
 						'taskId',
 					],
 				},
-				default: '',
-				description: 'Select the tag to add to the task. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				displayOptions: {
+					show: {
+						operation: ['addTag'],
+						resource: ['task'],
+					},
+				},
+				modes: [
+					{
+						displayName: 'ID',
+						name: 'id',
+						type: 'string',
+						hint: 'Enter a tag ID',
+						placeholder: '98765',
+					},
+					{
+						displayName: 'From list',
+						name: 'list',
+						type: 'list',
+						typeOptions: {
+							searchListMethod: 'getAvailableTags',
+							searchable: true,
+							searchFilterRequired: false,
+						},
+					},
+				],
 			},
 			{
 				displayName: 'Tag Name or ID',
 				name: 'taskTagId',
-				type: 'options',
+				type: 'resourceLocator',
 				required: true,
+				default: { mode: 'list' },
+				description: 'Select the tag to remove from the task. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				typeOptions: {
+					loadOptionsDependsOn: ['taskId'],
+				},
 				displayOptions: {
 					show: {
 						operation: ['removeTag'],
 						resource: ['task'],
 					},
 				},
-				typeOptions: {
-					loadOptionsMethod: 'getTaskTags',
-					loadOptionsDependsOn: ['taskId'],
-				},
-				default: '',
-				description: 'Select the tag to remove from the task. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				modes: [
+					{
+						displayName: 'ID',
+						name: 'id',
+						type: 'string',
+						hint: 'Enter a tag ID',
+						placeholder: '98765',
+					},
+					{
+						displayName: 'From list',
+						name: 'list',
+						type: 'list',
+						typeOptions: {
+							searchListMethod: 'getTaskTags',
+							searchable: true,
+							searchFilterRequired: false,
+						},
+					},
+				],
 			},
 			{
 				displayName: 'Assignee Name or ID',
@@ -1351,63 +1387,6 @@ export class TaskPano implements INodeType {
 				}
 			},
 
-			async getAvailableTags(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const options = this.getCurrentNodeParameter('taskOptions') as IDataObject;
-				const organizationId = options?.organizationId as string;
-				const projectNumericId = options?.projectNumericId as string;
-				const taskId = this.getCurrentNodeParameter('taskId', {
-					extractValue: true,
-				}) as string | undefined;
-
-				if (!organizationId || !projectNumericId || !taskId) {
-					return [];
-				}
-
-				try {
-					const projectHash = await getProjectHashFromNumericId.call(this, organizationId, projectNumericId);
-
-					const projectResponse = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/tags`);
-					const projectTags = projectResponse.data?.tags || [];
-
-					const taskResponse = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/tags`);
-					const taskTags = taskResponse.data?.tags || [];
-
-					const currentTaskTagIds = new Set(taskTags.map((tag: IDataObject) => tag.id));
-
-					const availableTags = projectTags.filter((tag: IDataObject) => !currentTaskTagIds.has(tag.id));
-
-					return availableTags.map((tag: IDataObject) => ({
-						name: tag.name as string,
-						value: tag.id as string,
-					}));
-				} catch (error) {
-					throw new NodeOperationError(this.getNode(), `Failed to load available tags: ${error.message}`);
-				}
-			},
-
-			async getTaskTags(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const taskId = this.getCurrentNodeParameter('taskId', {
-					extractValue: true,
-				}) as string | undefined;
-
-				if (!taskId) {
-					return [];
-				}
-
-				try {
-					const response = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/tags`);
-
-					const taskTags = response.data?.tags || [];
-
-					return taskTags.map((tag: IDataObject) => ({
-						name: tag.name as string,
-						value: tag.id as string,
-					}));
-				} catch (error) {
-					throw new NodeOperationError(this.getNode(), `Failed to load task tags: ${error.message}`);
-				}
-			},
-
 			async getAvailableAssignees(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const options = this.getCurrentNodeParameter('taskOptions') as IDataObject;
 				const organizationId = options?.organizationId as string;
@@ -1538,13 +1517,86 @@ export class TaskPano implements INodeType {
 					results,
 				};
 			},
-		async getTasks(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
-			const results = await loadTasks.call(this, filter);
+			async getTasks(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
+				const results = await loadTasks.call(this, filter);
 
-			return {
-				results,
-			};
-		},
+				return {
+					results,
+				};
+			},
+			async getAvailableTags(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
+				const options = this.getCurrentNodeParameter('taskOptions') as IDataObject;
+				const organizationId = options?.organizationId as string;
+				const projectNumericId = options?.projectNumericId as string;
+				const taskId = this.getCurrentNodeParameter('taskId', {
+					extractValue: true,
+				}) as string | undefined;
+
+				if (!organizationId || !projectNumericId || !taskId) {
+					return { results: [] };
+				}
+
+				try {
+					const projectHash = await getProjectHashFromNumericId.call(this, organizationId, projectNumericId);
+
+					const projectResponse = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/tags`);
+					const projectTags = projectResponse.data?.tags || [];
+
+					const taskResponse = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/tags`);
+					const taskTags = taskResponse.data?.tags || [];
+
+					const currentTaskTagIds = new Set(taskTags.map((tag: IDataObject) => tag.id));
+
+					let availableTags = projectTags.filter((tag: IDataObject) => !currentTaskTagIds.has(tag.id));
+
+					if (filter) {
+						const filterLc = filter.toLowerCase();
+						availableTags = availableTags.filter((tag: IDataObject) =>
+							(tag.name as string).toLowerCase().includes(filterLc)
+						);
+					}
+
+					const results = availableTags.map((tag: IDataObject) => ({
+						name: tag.name as string,
+						value: tag.id as string,
+					}));
+
+					return { results };
+				} catch (error) {
+					throw new NodeOperationError(this.getNode(), `Failed to load available tags: ${error.message}`);
+				}
+			},
+			async getTaskTags(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
+				const taskId = this.getCurrentNodeParameter('taskId', {
+					extractValue: true,
+				}) as string | undefined;
+
+				if (!taskId) {
+					return { results: [] };
+				}
+
+				try {
+					const response = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/tags`);
+
+					let taskTags = response.data?.tags || [];
+
+					if (filter) {
+						const filterLc = filter.toLowerCase();
+						taskTags = taskTags.filter((tag: IDataObject) =>
+							(tag.name as string).toLowerCase().includes(filterLc)
+						);
+					}
+
+					const results = taskTags.map((tag: IDataObject) => ({
+						name: tag.name as string,
+						value: tag.id as string,
+					}));
+
+					return { results };
+				} catch (error) {
+					throw new NodeOperationError(this.getNode(), `Failed to load task tags: ${error.message}`);
+				}
+			},
 		},
 	};
 
@@ -1864,7 +1916,9 @@ export class TaskPano implements INodeType {
 						const taskId = this.getNodeParameter('taskId', i, undefined, {
 							extractValue: true,
 						}) as string;
-						const tagId = this.getNodeParameter('tagId', i) as string;
+						const tagId = this.getNodeParameter('tagId', i, undefined, {
+							extractValue: true,
+						}) as string;
 
 						const body: IDataObject = {
 							tag: parseInt(tagId, 10),
@@ -1884,7 +1938,9 @@ export class TaskPano implements INodeType {
 						const taskId = this.getNodeParameter('taskId', i, undefined, {
 							extractValue: true,
 						}) as string;
-						const taskTagId = this.getNodeParameter('taskTagId', i) as string;
+						const taskTagId = this.getNodeParameter('taskTagId', i, undefined, {
+							extractValue: true,
+						}) as string;
 
 						const responseData = await taskPanoApiRequest.call(this, 'DELETE', `/tasks/${taskId}/tags/${taskTagId}`);
 
