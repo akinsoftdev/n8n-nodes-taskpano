@@ -303,7 +303,7 @@ export class TaskPano implements INodeType {
 				name: 'parentTaskId',
 				type: 'resourceLocator',
 				required: true,
-				default: { mode: 'id' },
+				default: { mode: 'list' },
 				description: 'Select the parent task. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 				typeOptions: {
 					loadOptionsDependsOn: ['taskOptions.projectNumericId'],
@@ -348,7 +348,7 @@ export class TaskPano implements INodeType {
 				name: 'taskId',
 				type: 'resourceLocator',
 				required: true,
-				default: { mode: 'id' },
+				default: { mode: 'list' },
 				description: 'Select the task. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 				typeOptions: {
 					loadOptionsDependsOn: ['taskOptions.projectNumericId'],
