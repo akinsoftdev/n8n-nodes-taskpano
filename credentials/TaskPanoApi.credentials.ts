@@ -5,7 +5,7 @@ import {
 	INodeProperties,
 } from 'n8n-workflow';
 
-import { TASKPANO_BASE_URL, TASKPANO_API_VERSION } from '../nodes/TaskPano/GenericFunctions';
+import { TASKPANO_BASE_URL, TASKPANO_API_VERSION } from '../nodes/TaskPano/transport';
 
 export class TaskPanoApi implements ICredentialType {
 	name = 'taskPanoApi';
