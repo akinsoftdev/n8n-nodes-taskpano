@@ -1,6 +1,7 @@
 import { NodeConnectionType, type INodeTypeDescription } from 'n8n-workflow';
 
 import * as task from './task/Task.resource';
+import * as project from './project/Project.resource';
 
 export const versionDescription: INodeTypeDescription = {
 	displayName: 'TaskPano',
@@ -29,6 +30,11 @@ export const versionDescription: INodeTypeDescription = {
 			noDataExpression: true,
 			options: [
 				{
+					name: 'Project',
+					value: 'project',
+					description: 'Work with projects',
+				},
+				{
 					name: 'Task',
 					value: 'task',
 					description: 'Work with tasks',
@@ -36,6 +42,7 @@ export const versionDescription: INodeTypeDescription = {
 			],
 			default: 'task',
 		},
+		...project.description,
 		...task.description,
 	],
 };

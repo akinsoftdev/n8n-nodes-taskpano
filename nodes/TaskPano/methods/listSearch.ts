@@ -7,6 +7,43 @@ import {
 import { taskPanoApiRequest } from '../transport';
 import { loadLists, loadTasks, getProjectHashFromNumericId } from '../helpers/utils';
 
+export async function getProjects(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
+	const options = this.getCurrentNodeParameter('projectOptions') as IDataObject;
+	const organizationId = options?.organizationId as string | undefined;
+
+	if (!organizationId) {
+		return { results: [] };
+	}
+
+	try {
+		const response = await taskPanoApiRequest.call(
+			this,
+			'GET',
+			`/organizations/${organizationId}/projects`,
+			{},
+			{ folder_id: -1 },
+		);
+
+		let projects = response.data?.projects || [];
+
+		if (filter) {
+			const filterLc = filter.toLowerCase();
+			projects = projects.filter((project: IDataObject) =>
+				(project.name as string).toLowerCase().includes(filterLc)
+			);
+		}
+
+		const results = projects.map((project: IDataObject) => ({
+			name: project.name as string,
+			value: project.id_hash as string,
+		}));
+
+		return { results };
+	} catch (error) {
+		throw new NodeOperationError(this.getNode(), `Failed to load projects: ${error.message}`);
+	}
+}
+
 export async function getLists(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
 	const results = await loadLists.call(this, filter);
 

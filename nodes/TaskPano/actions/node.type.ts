@@ -18,6 +18,7 @@ type NodeMap = {
 		| 'removeAssignee'
 		| 'addSubscription'
 		| 'removeSubscription';
+	project: 'getParticipants';
 };
 
 export type TaskPanoType = AllEntities<NodeMap>;
