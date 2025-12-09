@@ -17,6 +17,9 @@ import * as removeAssignee from './removeAssignee.operation';
 import * as addSubscription from './addSubscription.operation';
 import * as removeSubscription from './removeSubscription.operation';
 import * as updateCustomField from './updateCustomField.operation';
+import * as getAttachments from './getAttachments.operation';
+import * as uploadAttachment from './uploadAttachment.operation';
+import * as deleteAttachment from './deleteAttachment.operation';
 
 export {
 	create,
@@ -36,6 +39,9 @@ export {
 	addSubscription,
 	removeSubscription,
 	updateCustomField,
+	getAttachments,
+	uploadAttachment,
+	deleteAttachment,
 };
 
 export const description: INodeProperties[] = [
@@ -147,6 +153,24 @@ export const description: INodeProperties[] = [
 			description: 'Update a task',
 			action: 'Update a task',
 		},
+		{
+			name: 'Delete Attachment',
+			value: 'deleteAttachment',
+			description: 'Delete an attachment from a task',
+			action: 'Delete an attachment',
+		},
+		{
+			name: 'Get Attachments',
+			value: 'getAttachments',
+			description: 'Get all attachments of a task',
+			action: 'Get attachments',
+		},
+		{
+			name: 'Upload Attachment',
+			value: 'uploadAttachment',
+			description: 'Upload a file attachment to a task',
+			action: 'Upload an attachment',
+		},
 		],
 		default: 'create',
 		displayOptions: {
@@ -172,4 +196,7 @@ export const description: INodeProperties[] = [
 	...addSubscription.description,
 	...removeSubscription.description,
 	...updateCustomField.description,
+	...getAttachments.description,
+	...uploadAttachment.description,
+	...deleteAttachment.description,
 ];

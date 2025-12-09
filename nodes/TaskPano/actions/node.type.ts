@@ -17,8 +17,12 @@ type NodeMap = {
 		| 'addAssignee'
 		| 'removeAssignee'
 		| 'addSubscription'
-		| 'removeSubscription';
-	project: 'getParticipants';
+		| 'removeSubscription'
+		| 'updateCustomField'
+		| 'getAttachments'
+		| 'uploadAttachment'
+		| 'deleteAttachment';
+	project: 'getParticipants' | 'getCustomFields';
 };
 
 export type TaskPanoType = AllEntities<NodeMap>;

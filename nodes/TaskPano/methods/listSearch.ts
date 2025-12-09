@@ -440,3 +440,35 @@ export async function getCustomFieldSelectOptions(this: ILoadOptionsFunctions, f
 		throw new NodeOperationError(this.getNode(), `Failed to load select options: ${error.message}`);
 	}
 }
+
+export async function getTaskAttachments(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
+	const taskId = this.getCurrentNodeParameter('taskId', {
+		extractValue: true,
+	}) as string | undefined;
+
+	if (!taskId) {
+		return { results: [] };
+	}
+
+	try {
+		const response = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/attachments`);
+
+		let attachments = response.data?.attachments || response.attachments || response.data || [];
+
+		if (filter) {
+			const filterLc = filter.toLowerCase();
+			attachments = attachments.filter((attachment: IDataObject) =>
+				(attachment.original_name as string || attachment.name as string || '').toLowerCase().includes(filterLc)
+			);
+		}
+
+		const results = attachments.map((attachment: IDataObject) => ({
+			name: (attachment.original_name as string) || (attachment.name as string) || `Attachment ${attachment.id}`,
+			value: attachment.id as string,
+		}));
+
+		return { results };
+	} catch (error) {
+		throw new NodeOperationError(this.getNode(), `Failed to load task attachments: ${error.message}`);
+	}
+}
