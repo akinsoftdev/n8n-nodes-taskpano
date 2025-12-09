@@ -16,6 +16,7 @@ import * as addAssignee from './addAssignee.operation';
 import * as removeAssignee from './removeAssignee.operation';
 import * as addSubscription from './addSubscription.operation';
 import * as removeSubscription from './removeSubscription.operation';
+import * as updateCustomField from './updateCustomField.operation';
 
 export {
 	create,
@@ -34,6 +35,7 @@ export {
 	removeAssignee,
 	addSubscription,
 	removeSubscription,
+	updateCustomField,
 };
 
 export const description: INodeProperties[] = [
@@ -121,24 +123,30 @@ export const description: INodeProperties[] = [
 				description: 'Remove a tag from a task',
 				action: 'Remove a tag',
 			},
-			{
-				name: 'Update Checklist Item',
-				value: 'updateChecklistItem',
-				description: 'Update a checklist item subject',
-				action: 'Update a checklist item',
-			},
-			{
-				name: 'Update Checklist Item Status',
-				value: 'updateChecklistItemStatus',
-				description: 'Update a checklist item status (completed/uncompleted)',
-				action: 'Update a checklist item status',
-			},
-			{
-				name: 'Update Task',
-				value: 'update',
-				description: 'Update a task',
-				action: 'Update a task',
-			},
+		{
+			name: 'Update Checklist Item',
+			value: 'updateChecklistItem',
+			description: 'Update a checklist item subject',
+			action: 'Update a checklist item',
+		},
+		{
+			name: 'Update Checklist Item Status',
+			value: 'updateChecklistItemStatus',
+			description: 'Update a checklist item status (completed/uncompleted)',
+			action: 'Update a checklist item status',
+		},
+		{
+			name: 'Update Custom Field',
+			value: 'updateCustomField',
+			description: 'Update a custom field value on a task',
+			action: 'Update a custom field',
+		},
+		{
+			name: 'Update Task',
+			value: 'update',
+			description: 'Update a task',
+			action: 'Update a task',
+		},
 		],
 		default: 'create',
 		displayOptions: {
@@ -163,4 +171,5 @@ export const description: INodeProperties[] = [
 	...removeAssignee.description,
 	...addSubscription.description,
 	...removeSubscription.description,
+	...updateCustomField.description,
 ];

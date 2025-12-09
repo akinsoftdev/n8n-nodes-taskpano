@@ -1,8 +1,9 @@
 import type { INodeProperties } from 'n8n-workflow';
 
 import * as getParticipants from './getParticipants.operation';
+import * as getCustomFields from './getCustomFields.operation';
 
-export { getParticipants };
+export { getParticipants, getCustomFields };
 
 export const description: INodeProperties[] = [
 	{
@@ -11,6 +12,12 @@ export const description: INodeProperties[] = [
 		type: 'options',
 		noDataExpression: true,
 		options: [
+			{
+				name: 'Get Custom Fields',
+				value: 'getCustomFields',
+				description: 'Get all custom fields of a project',
+				action: 'Get custom fields of a project',
+			},
 			{
 				name: 'Get Participants',
 				value: 'getParticipants',
@@ -25,11 +32,7 @@ export const description: INodeProperties[] = [
 			},
 		},
 	},
+	...getCustomFields.description,
 	...getParticipants.description,
 ];
-
-
-
-
-
 

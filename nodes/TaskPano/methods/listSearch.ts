@@ -324,3 +324,119 @@ export async function getTaskSubscriptions(this: ILoadOptionsFunctions, filter?:
 		throw new NodeOperationError(this.getNode(), `Failed to load task subscriptions: ${error.message}`);
 	}
 }
+
+export async function getCustomFields(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
+	const options = this.getCurrentNodeParameter('taskOptions') as IDataObject;
+	const organizationId = options?.organizationId as string;
+	const projectNumericId = options?.projectNumericId as string;
+	const taskId = this.getCurrentNodeParameter('taskId', {
+		extractValue: true,
+	}) as string | undefined;
+
+	try {
+		let projectHash: string | undefined;
+
+		if (organizationId && projectNumericId) {
+			projectHash = await getProjectHashFromNumericId.call(this, organizationId, projectNumericId);
+		} else if (taskId) {
+			const taskResponse = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/show`);
+			const task = taskResponse.data?.task;
+
+			if (task?.list?.project?.id_hash) {
+				projectHash = task.list.project.id_hash;
+			} else if (task?.project?.id_hash) {
+				projectHash = task.project.id_hash;
+			}
+		}
+
+		if (!projectHash) {
+			return { results: [] };
+		}
+
+		const response = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/custom-fields`);
+
+		let customFields = response.data || [];
+
+		if (filter) {
+			const filterLc = filter.toLowerCase();
+			customFields = customFields.filter((field: IDataObject) =>
+				(field.name as string).toLowerCase().includes(filterLc)
+			);
+		}
+
+		const results = customFields.map((field: IDataObject) => ({
+			name: `${field.name as string} (${field.type as string})`,
+			value: field.id as string,
+		}));
+
+		return { results };
+	} catch (error) {
+		throw new NodeOperationError(this.getNode(), `Failed to load custom fields: ${error.message}`);
+	}
+}
+
+export async function getCustomFieldSelectOptions(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
+	const options = this.getCurrentNodeParameter('taskOptions') as IDataObject;
+	const organizationId = options?.organizationId as string;
+	const projectNumericId = options?.projectNumericId as string;
+	const taskId = this.getCurrentNodeParameter('taskId', {
+		extractValue: true,
+	}) as string | undefined;
+	const customFieldId = this.getCurrentNodeParameter('customFieldId', {
+		extractValue: true,
+	}) as string | undefined;
+
+	if (!customFieldId) {
+		return { results: [] };
+	}
+
+	try {
+		let projectHash: string | undefined;
+
+		if (organizationId && projectNumericId) {
+			projectHash = await getProjectHashFromNumericId.call(this, organizationId, projectNumericId);
+		} else if (taskId) {
+			const taskResponse = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/show`);
+			const task = taskResponse.data?.task;
+
+			if (task?.list?.project?.id_hash) {
+				projectHash = task.list.project.id_hash;
+			} else if (task?.project?.id_hash) {
+				projectHash = task.project.id_hash;
+			}
+		}
+
+		if (!projectHash) {
+			return { results: [] };
+		}
+
+		const response = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/custom-fields`);
+		const customFields = response.data || [];
+
+		const customField = customFields.find((field: IDataObject) => String(field.id) === String(customFieldId));
+
+		if (!customField || customField.type !== 'select') {
+			return { results: [] };
+		}
+
+		const params = customField.params as IDataObject;
+		const selectParams = params?.select as IDataObject;
+		let selectOptions = (selectParams?.options as IDataObject[]) || [];
+
+		if (filter) {
+			const filterLc = filter.toLowerCase();
+			selectOptions = selectOptions.filter((opt: IDataObject) =>
+				(opt.title as string).toLowerCase().includes(filterLc)
+			);
+		}
+
+		const results = selectOptions.map((opt: IDataObject) => ({
+			name: opt.title as string,
+			value: opt.value as string,
+		}));
+
+		return { results };
+	} catch (error) {
+		throw new NodeOperationError(this.getNode(), `Failed to load select options: ${error.message}`);
+	}
+}
