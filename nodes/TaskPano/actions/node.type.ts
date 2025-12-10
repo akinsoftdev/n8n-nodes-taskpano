@@ -20,6 +20,7 @@ type NodeMap = {
 		| 'removeSubscription'
 		| 'updateCustomField'
 		| 'getAttachments'
+		| 'downloadAttachment'
 		| 'uploadAttachment'
 		| 'deleteAttachment';
 	project: 'getParticipants' | 'getCustomFields';
