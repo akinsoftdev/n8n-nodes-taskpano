@@ -168,7 +168,7 @@ export async function execute(
 			});
 
 			const binaryData = await this.helpers.prepareBinaryData(
-				fileResponse.body as unknown as Uint8Array,
+				Buffer.from(fileResponse.body as unknown as Uint8Array),
 				fileName,
 				mimeType,
 			);

@@ -5,7 +5,6 @@ import type {
 } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
 import { TASKPANO_BASE_URL, TASKPANO_API_VERSION } from '../../transport';
-import FormData from 'form-data';
 
 const properties: INodeProperties[] = [
 	{
@@ -126,17 +125,31 @@ export async function execute(
 
 			const binaryDataBuffer = await this.helpers.getBinaryDataBuffer(i, binaryPropertyName);
 
-			const formData = new FormData();
-			formData.append('file', binaryDataBuffer, {
-				filename: binaryData.fileName || 'file',
-				contentType: binaryData.mimeType,
-			});
+			const boundary = `----n8nFormBoundary${Date.now()}`;
+			const fileName = binaryData.fileName || 'file';
+			const mimeType = binaryData.mimeType || 'application/octet-stream';
+
+			const preamble =
+				`--${boundary}\r\n` +
+				`Content-Disposition: form-data; name="file"; filename="${fileName}"\r\n` +
+				`Content-Type: ${mimeType}\r\n\r\n`;
+
+			const closing = `\r\n--${boundary}--\r\n`;
+
+			const bodyBuffer = Buffer.concat([
+				Buffer.from(preamble, 'utf8'),
+				binaryDataBuffer,
+				Buffer.from(closing, 'utf8'),
+			]);
 
 			const options = {
 				method: 'POST' as const,
 				url: `${TASKPANO_BASE_URL}/${TASKPANO_API_VERSION}/tasks/${taskId}/attachments`,
-				body: formData,
-				headers: formData.getHeaders(),
+				headers: {
+					'Content-Type': `multipart/form-data; boundary=${boundary}`,
+					'Content-Length': bodyBuffer.length,
+				},
+				body: bodyBuffer,
 			};
 
 			const responseData = await this.helpers.httpRequestWithAuthentication.call(
