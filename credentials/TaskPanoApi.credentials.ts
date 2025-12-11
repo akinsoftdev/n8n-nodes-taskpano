@@ -31,7 +31,6 @@ export class TaskPanoApi implements ICredentialType {
 		properties: {
 			headers: {
 				Authorization: '=Bearer {{$credentials.apiKey}}',
-				'Content-Type': 'application/json',
 				Accept: 'application/json',
 			},
 		},

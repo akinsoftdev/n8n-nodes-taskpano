@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-taskpano",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "TaskPano nodes for n8n",
   "keywords": [
     "n8n-community-node-package"
@@ -49,5 +49,8 @@
   },
   "peerDependencies": {
     "n8n-workflow": "*"
+  },
+  "dependencies": {
+    "form-data": "^4.0.1"
   }
 }

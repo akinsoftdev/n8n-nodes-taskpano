@@ -5,6 +5,7 @@ import type {
 } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
 import { TASKPANO_BASE_URL, TASKPANO_API_VERSION } from '../../transport';
+import FormData from 'form-data';
 
 const properties: INodeProperties[] = [
 	{
@@ -125,22 +126,20 @@ export async function execute(
 
 			const binaryDataBuffer = await this.helpers.getBinaryDataBuffer(i, binaryPropertyName);
 
+			const formData = new FormData();
+			formData.append('file', binaryDataBuffer, {
+				filename: binaryData.fileName || 'file',
+				contentType: binaryData.mimeType,
+			});
+
 			const options = {
 				method: 'POST' as const,
 				url: `${TASKPANO_BASE_URL}/${TASKPANO_API_VERSION}/tasks/${taskId}/attachments`,
-				formData: {
-					file: {
-						value: binaryDataBuffer,
-						options: {
-							filename: binaryData.fileName || 'file',
-							contentType: binaryData.mimeType,
-						},
-					},
-				},
-				json: true,
+				body: formData,
+				headers: formData.getHeaders(),
 			};
 
-			const responseData = await this.helpers.requestWithAuthentication.call(
+			const responseData = await this.helpers.httpRequestWithAuthentication.call(
 				this,
 				'taskPanoApi',
 				options,
@@ -166,4 +165,3 @@ export async function execute(
 
 	return returnData;
 }
-

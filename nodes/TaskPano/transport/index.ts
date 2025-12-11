@@ -18,11 +18,10 @@ export async function taskPanoApiRequest(
 		method,
 		body: Object.keys(body).length ? body : undefined,
 		qs: Object.keys(qs).length ? qs : undefined,
-		uri: `${TASKPANO_BASE_URL}/${TASKPANO_API_VERSION}${endpoint}`,
-		json: true,
+		url: `${TASKPANO_BASE_URL}/${TASKPANO_API_VERSION}${endpoint}`,
 	};
 
-	return this.helpers.requestWithAuthentication.call(this, 'taskPanoApi', options);
+	return this.helpers.httpRequestWithAuthentication.call(this, 'taskPanoApi', options);
 }
 
 export async function taskPanoApiRequestAllItems(
