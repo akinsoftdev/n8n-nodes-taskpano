@@ -1,8 +1,8 @@
 {
-	"node": "n8n-nodes-taskpano.taskPano",
+	"node": "n8n-nodes-base.taskPano",
 	"nodeVersion": "1.0",
 	"codexVersion": "1.0",
-	"categories": ["Productivity"],
+	"categories": ["Productivity", "Product & Project Management"],
 	"resources": {
 		"credentialDocumentation": [
 			{

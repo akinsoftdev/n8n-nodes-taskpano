@@ -1,9 +1,11 @@
 {
   "name": "n8n-nodes-taskpano",
   "version": "0.1.2",
-  "description": "TaskPano nodes for n8n",
+  "description": "n8n node for TaskPano integration",
   "keywords": [
-    "n8n-community-node-package"
+    "n8n-community-node-package",
+    "taskpano",
+    "project-management"
   ],
   "license": "MIT",
   "homepage": "https://akinsoft.com.tr",
