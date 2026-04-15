@@ -1,23 +1,55 @@
-import type {
-	IExecuteFunctions,
-	INodeType,
-	INodeTypeDescription,
-	INodeTypeBaseDescription,
-} from 'n8n-workflow';
+import { NodeConnectionType } from 'n8n-workflow';
+import type { IExecuteFunctions, INodeType, INodeTypeDescription } from 'n8n-workflow';
 
 import { router } from './actions/router';
-import { versionDescription } from './actions/versionDescription';
+import * as task from './actions/task/Task.resource';
+import * as project from './actions/project/Project.resource';
 import { listSearch, loadOptions } from './methods';
 
 export class TaskPano implements INodeType {
-	description: INodeTypeDescription;
-
-	constructor(baseDescription: INodeTypeBaseDescription) {
-		this.description = {
-			...baseDescription,
-			...versionDescription,
-		};
-	}
+	description: INodeTypeDescription = {
+		displayName: 'TaskPano',
+		name: 'taskPano',
+		icon: { light: 'file:taskPano.svg', dark: 'file:taskPano.dark.svg' },
+		group: ['output'],
+		version: 1,
+		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
+		description: 'Consume TaskPano API',
+		defaults: {
+			name: 'TaskPano',
+		},
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
+		credentials: [
+			{
+				name: 'taskPanoApi',
+				required: true,
+			},
+		],
+		properties: [
+			{
+				displayName: 'Resource',
+				name: 'resource',
+				type: 'options',
+				noDataExpression: true,
+				options: [
+					{
+						name: 'Project',
+						value: 'project',
+						description: 'Work with projects',
+					},
+					{
+						name: 'Task',
+						value: 'task',
+						description: 'Work with tasks',
+					},
+				],
+				default: 'task',
+			},
+			...project.description,
+			...task.description,
+		],
+	};
 
 	methods = {
 		listSearch,
