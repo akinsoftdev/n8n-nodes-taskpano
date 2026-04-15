@@ -1,4 +1,4 @@
-import { NodeConnectionType } from 'n8n-workflow';
+import { NodeConnectionTypes } from 'n8n-workflow';
 import type { IExecuteFunctions, INodeType, INodeTypeDescription } from 'n8n-workflow';
 
 import { router } from './actions/router';
@@ -18,8 +18,8 @@ export class TaskPano implements INodeType {
 		defaults: {
 			name: 'TaskPano',
 		},
-		inputs: [NodeConnectionType.Main],
-		outputs: [NodeConnectionType.Main],
+		inputs: [NodeConnectionTypes.Main],
+		outputs: [NodeConnectionTypes.Main],
 		credentials: [
 			{
 				name: 'taskPanoApi',
@@ -49,6 +49,7 @@ export class TaskPano implements INodeType {
 			...project.description,
 			...task.description,
 		],
+		usableAsTool: true,
 	};
 
 	methods = {

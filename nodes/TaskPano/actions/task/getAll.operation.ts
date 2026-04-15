@@ -462,8 +462,10 @@ export async function execute(
 			} else {
 				const limit = this.getNodeParameter('limit', i) as number;
 				queryParams.limit = limit;
-				const responseData = await taskPanoApiRequest.call(this, 'GET', endpoint, {}, queryParams);
-				tasks = responseData.data?.tasks?.data || [];
+				const responseData = await taskPanoApiRequest.call(this, 'GET', endpoint, {}, queryParams) as {
+					data: { tasks: { data: IDataObject[] } };
+				};
+				tasks = responseData.data?.tasks?.data ?? [];
 			}
 
 			const executionData = this.helpers.constructExecutionMetaData(

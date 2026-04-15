@@ -1,4 +1,5 @@
 import type {
+	IDataObject,
 	IExecuteFunctions,
 	INodeExecutionData,
 	INodeProperties,
@@ -105,21 +106,13 @@ export async function execute(
 				this,
 				'GET',
 				`/tasks/${taskId}/attachments`,
-			);
+			) as { data: { attachments?: IDataObject[] } };
 
-			const attachments = responseData.data?.attachments ?? responseData.attachments ?? responseData.data ?? responseData;
+			const attachments = responseData.data?.attachments ?? [];
 
-			if (Array.isArray(attachments)) {
-				for (const attachment of attachments) {
-					const executionData = this.helpers.constructExecutionMetaData(
-						[{ json: attachment }],
-						{ itemData: { item: i } },
-					);
-					returnData.push(...executionData);
-				}
-			} else {
+			for (const attachment of attachments) {
 				const executionData = this.helpers.constructExecutionMetaData(
-					[{ json: responseData }],
+					[{ json: attachment }],
 					{ itemData: { item: i } },
 				);
 				returnData.push(...executionData);

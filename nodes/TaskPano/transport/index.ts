@@ -4,7 +4,7 @@ import {
 	ILoadOptionsFunctions,
 } from 'n8n-workflow';
 
-export const TASKPANO_BASE_URL = 'https://app.taskpano.com/api';
+export const TASKPANO_BASE_URL = 'http://app.taskpano.test:8010/api';
 export const TASKPANO_API_VERSION = 'v1';
 
 export async function taskPanoApiRequest(
@@ -13,7 +13,7 @@ export async function taskPanoApiRequest(
 	endpoint: string,
 	body: IDataObject = {},
 	qs: IDataObject = {},
-): Promise<any> {
+): Promise<IDataObject> {
 	const options = {
 		method,
 		body: Object.keys(body).length ? body : undefined,
@@ -45,14 +45,15 @@ export async function taskPanoApiRequestAllItems(
 			{ ...qs, page, limit: 250 },
 		);
 
-		const container = response.data?.[propertyName] ?? {};
-		const segment = container?.data ?? container;
+		const responseData = response.data as IDataObject;
+		const container = ((responseData?.[propertyName] ?? {}) as IDataObject);
+		const segment = (container?.data ?? container) as IDataObject[];
 
 		if (Array.isArray(segment)) {
-			returnData.push(...segment);
+			returnData.push(...(segment as IDataObject[]));
 		}
 
-		hasNextPage = container?.next_page_url ?? null;
+		hasNextPage = (container?.next_page_url as string | null) ?? null;
 
 		page++;
 	} while (hasNextPage);

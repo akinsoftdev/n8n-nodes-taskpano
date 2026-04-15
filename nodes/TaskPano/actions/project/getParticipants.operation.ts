@@ -95,9 +95,9 @@ export async function execute(
 				this,
 				'GET',
 				`/projects/${projectId}/assignees`,
-			);
+			) as { data: { projectAssignees?: IDataObject[] } };
 
-			const participants = responseData.data?.projectAssignees || [];
+			const participants = responseData.data?.projectAssignees ?? [];
 
 			const executionData = this.helpers.constructExecutionMetaData(
 				participants.map((participant: IDataObject) => ({ json: participant })),

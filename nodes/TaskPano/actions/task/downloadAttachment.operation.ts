@@ -150,7 +150,7 @@ export async function execute(
 				`/tasks/${taskId}/attachments/${attachmentId}/signed-url`,
 			);
 
-			const responseData = signedUrlResponse.data || signedUrlResponse;
+			const responseData = (signedUrlResponse.data || signedUrlResponse) as { url?: string; original_name?: string; mime_type?: string };
 			const signedUrl = responseData.url;
 
 			if (!signedUrl) {

@@ -95,10 +95,9 @@ export async function execute(
 				this,
 				'GET',
 				`/projects/${projectId}/custom-fields`,
-			);
+			) as { data?: IDataObject[] };
 
-			// Laravel Resource Collection returns { "data": [...] } format
-			const customFields = responseData.data || [];
+			const customFields = responseData.data ?? [];
 
 			const executionData = this.helpers.constructExecutionMetaData(
 				customFields.map((field: IDataObject) => ({ json: field })),

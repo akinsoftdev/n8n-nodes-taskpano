@@ -9,11 +9,12 @@ import { loadLists, loadTasks, getProjectHashFromNumericId } from '../helpers/ut
 
 export async function getOrganizations(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 	try {
-		const response = await taskPanoApiRequest.call(this, 'GET', '/organizations');
+		const response = await taskPanoApiRequest.call(this, 'GET', '/organizations') as {
+			data: { organizations?: IDataObject[]; assigneedOrganizations?: IDataObject[] };
+		};
 
-		const { data } = response;
-		const ownedOrganizations = data?.organizations || [];
-		const assignedOrganizations = data?.assigneedOrganizations || [];
+		const ownedOrganizations = response.data?.organizations ?? [];
+		const assignedOrganizations = response.data?.assigneedOrganizations ?? [];
 		const allOrganizations = [...ownedOrganizations, ...assignedOrganizations];
 
 		return allOrganizations.map((org: IDataObject) => ({
@@ -40,9 +41,9 @@ export async function getProjects(this: ILoadOptionsFunctions): Promise<INodePro
 			`/organizations/${organizationId}/projects`,
 			{},
 			{ folder_id: -1 },
-		);
+		) as { data: { projects?: IDataObject[] } };
 
-		const projects = response.data?.projects || [];
+		const projects = response.data?.projects ?? [];
 
 		return projects.map((project: IDataObject) => ({
 			name: project.name as string,
@@ -68,9 +69,9 @@ export async function getProjectsNumeric(this: ILoadOptionsFunctions): Promise<I
 			`/organizations/${organizationId}/projects`,
 			{},
 			{ folder_id: -1 },
-		);
+		) as { data: { projects?: IDataObject[] } };
 
-		const projects = response.data?.projects || [];
+		const projects = response.data?.projects ?? [];
 
 		return projects.map((project: IDataObject) => ({
 			name: project.name as string,
@@ -91,16 +92,16 @@ export async function getProjectsForFilters(this: ILoadOptionsFunctions): Promis
 	}
 
 	try {
-		let response;
+		let response: { data: { projects?: IDataObject[] } };
 
 		if (folderId && folderId !== '-1') {
 			const foldersResponse = await taskPanoApiRequest.call(
 				this,
 				'GET',
 				`/organizations/${organizationId}/folders`,
-			);
+			) as { data: { folders?: IDataObject[] } };
 
-			const folders = foldersResponse.data?.folders || [];
+			const folders = foldersResponse.data?.folders ?? [];
 			const folder = folders.find((f: IDataObject) => f.id === folderId);
 
 			if (!folder) {
@@ -111,7 +112,7 @@ export async function getProjectsForFilters(this: ILoadOptionsFunctions): Promis
 				this,
 				'GET',
 				`/folders/${folder.id_hash}/projects-with-descendants`,
-			);
+			) as { data: { projects?: IDataObject[] } };
 		} else {
 			response = await taskPanoApiRequest.call(
 				this,
@@ -119,10 +120,10 @@ export async function getProjectsForFilters(this: ILoadOptionsFunctions): Promis
 				`/organizations/${organizationId}/projects`,
 				{},
 				{ folder_id: -1 },
-			);
+			) as { data: { projects?: IDataObject[] } };
 		}
 
-		const projects = response.data?.projects || [];
+		const projects = response.data?.projects ?? [];
 
 		return projects.map((project: IDataObject) => ({
 			name: project.name as string,
@@ -147,9 +148,9 @@ export async function getListsForFilters(this: ILoadOptionsFunctions): Promise<I
 	try {
 		const projectHash = await getProjectHashFromNumericId.call(this, organizationId, projectNumericId);
 
-		const response = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/lists`);
+		const response = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/lists`) as { data: { lists?: IDataObject[] } };
 
-		const lists = response.data?.lists || [];
+		const lists = response.data?.lists ?? [];
 
 		return lists.map((list: IDataObject) => ({
 			name: list.name as string,
@@ -173,9 +174,9 @@ export async function getUsersForFilters(this: ILoadOptionsFunctions): Promise<I
 		if (projectNumericId) {
 			const projectHash = await getProjectHashFromNumericId.call(this, organizationId as string, projectNumericId as string);
 
-			const response = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/assignees`);
+			const response = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/assignees`) as { data: { projectAssignees?: IDataObject[] } };
 
-			const projectAssignees = response.data?.projectAssignees || [];
+			const projectAssignees = response.data?.projectAssignees ?? [];
 
 			return projectAssignees.map((user: IDataObject) => ({
 				name: user.name as string,
@@ -183,9 +184,9 @@ export async function getUsersForFilters(this: ILoadOptionsFunctions): Promise<I
 			}));
 		}
 
-		const response = await taskPanoApiRequest.call(this, 'GET', `/organizations/${organizationId}/assignees-contain-tasks`);
+		const response = await taskPanoApiRequest.call(this, 'GET', `/organizations/${organizationId}/assignees-contain-tasks`) as { data: { organizationAssignees?: IDataObject[] } };
 
-		const users = response.data?.organizationAssignees || [];
+		const users = response.data?.organizationAssignees ?? [];
 
 		return users.map((user: IDataObject) => ({
 			name: user.name as string,
@@ -225,9 +226,9 @@ export async function getTagsForFilters(this: ILoadOptionsFunctions): Promise<IN
 			'/project-tags/names-contain-tasks',
 			{},
 			queryParams,
-		);
+		) as { data: { tags?: string[] } };
 
-		const tags = response.data?.tags || [];
+		const tags = response.data?.tags ?? [];
 
 		return tags.map((tag: string) => ({
 			name: tag,
@@ -250,9 +251,9 @@ export async function getFoldersForFilters(this: ILoadOptionsFunctions): Promise
 			this,
 			'GET',
 			`/organizations/${organizationId}/folders`,
-		);
+		) as { data: { folders?: IDataObject[] } };
 
-		const folders = response.data?.folders || [];
+		const folders = response.data?.folders ?? [];
 
 		const folderOptions = folders.map((folder: IDataObject) => ({
 			name: folder.name as string,

@@ -17,22 +17,18 @@ export async function router(this: IExecuteFunctions): Promise<INodeExecutionDat
 
 	let returnData: INodeExecutionData[] = [];
 
-	try {
-		switch (taskPanoNodeData.resource) {
-			case 'task':
-				returnData = await task[taskPanoNodeData.operation].execute.call(this, items);
-				break;
-			case 'project':
-				returnData = await project[taskPanoNodeData.operation].execute.call(this, items);
-				break;
-			default:
-				throw new NodeOperationError(
-					this.getNode(),
-					`The resource "${resource}" is not supported!`,
-				);
-		}
-	} catch (error) {
-		throw error;
+	switch (taskPanoNodeData.resource) {
+		case 'task':
+			returnData = await task[taskPanoNodeData.operation].execute.call(this, items);
+			break;
+		case 'project':
+			returnData = await project[taskPanoNodeData.operation].execute.call(this, items);
+			break;
+		default:
+			throw new NodeOperationError(
+				this.getNode(),
+				`The resource "${resource}" is not supported!`,
+			);
 	}
 
 	return [returnData];

@@ -38,9 +38,9 @@ export async function loadLists(this: ILoadOptionsFunctions, filter?: string): P
 			projectHash = await getProjectHashFromNumericId.call(this, organizationId, projectNumericId as string);
 		}
 
-		const response = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/lists`);
+	const response = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/lists`) as { data: { lists?: IDataObject[] } };
 
-		const lists = (response.data?.lists || []) as IDataObject[];
+	const lists = response.data?.lists ?? [];
 
 		let options = lists.map((list) => ({
 			name: list.name as string,
@@ -89,15 +89,15 @@ export async function getProjectHashFromNumericId(
 	organizationId: string,
 	projectNumericId: string,
 ): Promise<string> {
-	const projectsResponse = await taskPanoApiRequest.call(
+	const response = await taskPanoApiRequest.call(
 		this,
 		'GET',
 		`/organizations/${organizationId}/projects`,
 		{},
 		{ folder_id: -1 },
-	);
+	) as { data: { projects?: IDataObject[] } };
 
-	const projects = projectsResponse.data?.projects || [];
+	const projects = response.data?.projects ?? [];
 	const project = projects.find((p: IDataObject) => p.id === parseInt(projectNumericId as string, 10));
 
 	if (!project) {
@@ -111,9 +111,11 @@ export async function getOrganizationNumericIdFromHash(
 	this: IExecuteFunctions | ILoadOptionsFunctions,
 	organizationIdHash: string,
 ): Promise<number | null> {
-	const { data } = await taskPanoApiRequest.call(this, 'GET', '/organizations');
-	const ownedOrganizations = data?.organizations || [];
-	const assignedOrganizations = data?.assigneedOrganizations || [];
+	const response = await taskPanoApiRequest.call(this, 'GET', '/organizations') as {
+		data: { organizations?: IDataObject[]; assigneedOrganizations?: IDataObject[] };
+	};
+	const ownedOrganizations = response.data?.organizations ?? [];
+	const assignedOrganizations = response.data?.assigneedOrganizations ?? [];
 	const allOrganizations = [...ownedOrganizations, ...assignedOrganizations];
 
 	const organization = allOrganizations.find((org: IDataObject) => org.id_hash === organizationIdHash);

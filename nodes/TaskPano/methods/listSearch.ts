@@ -16,15 +16,15 @@ export async function getProjects(this: ILoadOptionsFunctions, filter?: string):
 	}
 
 	try {
-		const response = await taskPanoApiRequest.call(
-			this,
-			'GET',
-			`/organizations/${organizationId}/projects`,
-			{},
-			{ folder_id: -1 },
-		);
+	const response = await taskPanoApiRequest.call(
+		this,
+		'GET',
+		`/organizations/${organizationId}/projects`,
+		{},
+		{ folder_id: -1 },
+	) as { data: { projects?: IDataObject[] } };
 
-		let projects = response.data?.projects || [];
+	let projects = response.data?.projects ?? [];
 
 		if (filter) {
 			const filterLc = filter.toLowerCase();
@@ -75,11 +75,11 @@ export async function getAvailableTags(this: ILoadOptionsFunctions, filter?: str
 	try {
 		const projectHash = await getProjectHashFromNumericId.call(this, organizationId, projectNumericId);
 
-		const projectResponse = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/tags`);
-		const projectTags = projectResponse.data?.tags || [];
+		const projectResponse = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/tags`) as { data: { tags?: IDataObject[] } };
+		const projectTags = projectResponse.data?.tags ?? [];
 
-		const taskResponse = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/tags`);
-		const taskTags = taskResponse.data?.tags || [];
+		const taskResponse = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/tags`) as { data: { tags?: IDataObject[] } };
+		const taskTags = taskResponse.data?.tags ?? [];
 
 		const currentTaskTagIds = new Set(taskTags.map((tag: IDataObject) => tag.id));
 
@@ -113,9 +113,9 @@ export async function getTaskTags(this: ILoadOptionsFunctions, filter?: string):
 	}
 
 	try {
-		const response = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/tags`);
+		const response = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/tags`) as { data: { tags?: IDataObject[] } };
 
-		let taskTags = response.data?.tags || [];
+		let taskTags = response.data?.tags ?? [];
 
 		if (filter) {
 			const filterLc = filter.toLowerCase();
@@ -145,9 +145,9 @@ export async function getChecklistItems(this: ILoadOptionsFunctions, filter?: st
 	}
 
 	try {
-		const response = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/checklists`);
+		const response = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/checklists`) as { data: { checklists?: IDataObject[] } };
 
-		let checklistItems = response.data?.checklists || [];
+		let checklistItems = response.data?.checklists ?? [];
 
 		if (filter) {
 			const filterLc = filter.toLowerCase();
@@ -182,11 +182,11 @@ export async function getAvailableAssignees(this: ILoadOptionsFunctions, filter?
 	try {
 		const projectHash = await getProjectHashFromNumericId.call(this, organizationId, projectNumericId);
 
-		const projectAssigneesResponse = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/assignees`);
-		const projectAssignees = projectAssigneesResponse.data?.projectAssignees || [];
+		const projectAssigneesResponse = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/assignees`) as { data: { projectAssignees?: IDataObject[] } };
+		const projectAssignees = projectAssigneesResponse.data?.projectAssignees ?? [];
 
-		const taskAssigneesResponse = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/assignees`);
-		const taskAssignees = taskAssigneesResponse.data?.assignees || [];
+		const taskAssigneesResponse = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/assignees`) as { data: { assignees?: IDataObject[] } };
+		const taskAssignees = taskAssigneesResponse.data?.assignees ?? [];
 
 		const currentTaskAssigneeIds = new Set(taskAssignees.map((assignee: IDataObject) => assignee.id));
 
@@ -222,9 +222,9 @@ export async function getTaskAssignees(this: ILoadOptionsFunctions, filter?: str
 	}
 
 	try {
-		const response = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/assignees`);
+		const response = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/assignees`) as { data: { assignees?: IDataObject[] } };
 
-		let taskAssignees = response.data?.assignees || [];
+		let taskAssignees = response.data?.assignees ?? [];
 
 		if (filter) {
 			const filterLc = filter.toLowerCase();
@@ -259,14 +259,14 @@ export async function getAvailableSubscriptions(this: ILoadOptionsFunctions, fil
 	try {
 		const projectHash = await getProjectHashFromNumericId.call(this, organizationId, projectNumericId);
 
-		const projectAssigneesResponse = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/assignees`);
-		const projectAssignees = projectAssigneesResponse.data?.projectAssignees || [];
+		const projectAssigneesResponse = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/assignees`) as { data: { projectAssignees?: IDataObject[] } };
+		const projectAssignees = projectAssigneesResponse.data?.projectAssignees ?? [];
 
-		const taskAssigneesResponse = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/assignees`);
-		const taskAssignees = taskAssigneesResponse.data?.assignees || [];
+		const taskAssigneesResponse = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/assignees`) as { data: { assignees?: IDataObject[] } };
+		const taskAssignees = taskAssigneesResponse.data?.assignees ?? [];
 
-		const taskSubscriptionsResponse = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/subscriptions`);
-		const taskSubscriptions = taskSubscriptionsResponse.data?.subscriptions || [];
+		const taskSubscriptionsResponse = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/subscriptions`) as { data: { subscriptions?: IDataObject[] } };
+		const taskSubscriptions = taskSubscriptionsResponse.data?.subscriptions ?? [];
 
 		const currentTaskAssigneeIds = new Set(taskAssignees.map((assignee: IDataObject) => assignee.id));
 		const currentTaskSubscriptionIds = new Set(taskSubscriptions.map((subscription: IDataObject) => subscription.id));
@@ -303,9 +303,9 @@ export async function getTaskSubscriptions(this: ILoadOptionsFunctions, filter?:
 	}
 
 	try {
-		const response = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/subscriptions`);
+		const response = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/subscriptions`) as { data: { subscriptions?: IDataObject[] } };
 
-		let taskSubscriptions = response.data?.subscriptions || [];
+		let taskSubscriptions = response.data?.subscriptions ?? [];
 
 		if (filter) {
 			const filterLc = filter.toLowerCase();
@@ -339,7 +339,9 @@ export async function getCustomFields(this: ILoadOptionsFunctions, filter?: stri
 		if (organizationId && projectNumericId) {
 			projectHash = await getProjectHashFromNumericId.call(this, organizationId, projectNumericId);
 		} else if (taskId) {
-			const taskResponse = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/show`);
+			const taskResponse = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/show`) as {
+				data: { task?: { list?: { project?: { id_hash?: string } }; project?: { id_hash?: string } } };
+			};
 			const task = taskResponse.data?.task;
 
 			if (task?.list?.project?.id_hash) {
@@ -353,9 +355,9 @@ export async function getCustomFields(this: ILoadOptionsFunctions, filter?: stri
 			return { results: [] };
 		}
 
-		const response = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/custom-fields`);
+		const response = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/custom-fields`) as { data?: IDataObject[] };
 
-		let customFields = response.data || [];
+		let customFields = response.data ?? [];
 
 		if (filter) {
 			const filterLc = filter.toLowerCase();
@@ -396,7 +398,9 @@ export async function getCustomFieldSelectOptions(this: ILoadOptionsFunctions, f
 		if (organizationId && projectNumericId) {
 			projectHash = await getProjectHashFromNumericId.call(this, organizationId, projectNumericId);
 		} else if (taskId) {
-			const taskResponse = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/show`);
+			const taskResponse = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/show`) as {
+				data: { task?: { list?: { project?: { id_hash?: string } }; project?: { id_hash?: string } } };
+			};
 			const task = taskResponse.data?.task;
 
 			if (task?.list?.project?.id_hash) {
@@ -410,8 +414,8 @@ export async function getCustomFieldSelectOptions(this: ILoadOptionsFunctions, f
 			return { results: [] };
 		}
 
-		const response = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/custom-fields`);
-		const customFields = response.data || [];
+		const response = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/custom-fields`) as { data?: IDataObject[] };
+		const customFields = response.data ?? [];
 
 		const customField = customFields.find((field: IDataObject) => String(field.id) === String(customFieldId));
 
@@ -451,9 +455,9 @@ export async function getTaskAttachments(this: ILoadOptionsFunctions, filter?: s
 	}
 
 	try {
-		const response = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/attachments`);
+		const response = await taskPanoApiRequest.call(this, 'GET', `/tasks/${taskId}/attachments`) as { data: { attachments?: IDataObject[] } };
 
-		let attachments = response.data?.attachments || response.attachments || response.data || [];
+		let attachments = response.data?.attachments ?? [];
 
 		if (filter) {
 			const filterLc = filter.toLowerCase();
