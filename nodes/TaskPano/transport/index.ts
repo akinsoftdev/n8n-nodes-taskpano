@@ -4,7 +4,7 @@ import {
 	ILoadOptionsFunctions,
 } from 'n8n-workflow';
 
-export const TASKPANO_BASE_URL = 'http://app.taskpano.test:8010/api';
+export const TASKPANO_BASE_URL = 'https://app.taskpano.com/api';
 export const TASKPANO_API_VERSION = 'v1';
 
 export async function taskPanoApiRequest(
