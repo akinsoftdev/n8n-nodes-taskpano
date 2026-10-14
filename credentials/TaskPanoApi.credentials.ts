@@ -40,7 +40,7 @@ export class TaskPanoApi implements ICredentialType {
 	test: ICredentialTestRequest = {
 		request: {
 			baseURL: `${TASKPANO_BASE_URL}/${TASKPANO_API_VERSION}`,
-			url: '/user',
+			url: '/users/user',
 			method: 'GET',
 		},
 	};
