@@ -3,7 +3,9 @@ import type {
 	IExecuteFunctions,
 	INodeExecutionData,
 	INodeProperties,
+	JsonObject,
 } from 'n8n-workflow';
+import { NodeApiError } from 'n8n-workflow';
 import { taskPanoApiRequest, taskPanoApiRequestAllItems } from '../../transport';
 import { getOrganizationNumericIdFromHash } from '../../helpers/utils';
 
@@ -482,7 +484,7 @@ export async function execute(
 				});
 				continue;
 			}
-			throw error;
+			throw new NodeApiError(this.getNode(), error as JsonObject, { itemIndex: i });
 		}
 	}
 

@@ -2,7 +2,9 @@ import type {
 	IExecuteFunctions,
 	INodeExecutionData,
 	INodeProperties,
+	JsonObject,
 } from 'n8n-workflow';
+import { NodeApiError, NodeOperationError } from 'n8n-workflow';
 import { taskPanoApiRequest } from '../../transport';
 
 const properties: INodeProperties[] = [
@@ -154,7 +156,7 @@ export async function execute(
 			const signedUrl = responseData.url;
 
 			if (!signedUrl) {
-				throw new Error('Failed to get signed URL for attachment');
+				throw new NodeOperationError(this.getNode(), 'Failed to get signed URL for attachment', { itemIndex: i });
 			}
 
 			const fileName = responseData.original_name || 'attachment';
@@ -197,7 +199,7 @@ export async function execute(
 				});
 				continue;
 			}
-			throw error;
+			throw new NodeApiError(this.getNode(), error as JsonObject, { itemIndex: i });
 		}
 	}
 

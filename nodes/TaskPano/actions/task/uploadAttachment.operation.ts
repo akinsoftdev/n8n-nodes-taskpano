@@ -2,8 +2,9 @@ import type {
 	IExecuteFunctions,
 	INodeExecutionData,
 	INodeProperties,
+	JsonObject,
 } from 'n8n-workflow';
-import { NodeOperationError } from 'n8n-workflow';
+import { NodeApiError, NodeOperationError } from 'n8n-workflow';
 import { TASKPANO_BASE_URL, TASKPANO_API_VERSION } from '../../transport';
 
 const properties: INodeProperties[] = [
@@ -172,7 +173,7 @@ export async function execute(
 				});
 				continue;
 			}
-			throw error;
+			throw new NodeApiError(this.getNode(), error as JsonObject, { itemIndex: i });
 		}
 	}
 
