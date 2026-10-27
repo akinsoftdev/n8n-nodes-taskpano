@@ -11,7 +11,7 @@ export class TaskPanoApi implements ICredentialType {
 	name = 'taskPanoApi';
 	displayName = 'TaskPano API';
 	icon = { light: 'file:../nodes/TaskPano/taskPano.svg', dark: 'file:../nodes/TaskPano/taskPano.dark.svg' } as ICredentialType['icon'];
-	documentationUrl = 'https://app.taskpano.com/api/docs';
+	documentationUrl = 'https://app.taskpano.com/docs/api';
 	properties: INodeProperties[] = [
 		{
 			displayName: 'API Key',

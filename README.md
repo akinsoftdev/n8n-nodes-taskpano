@@ -74,7 +74,7 @@ This node has been tested with n8n version 1.0 and above.
 ## Resources
 
 - [n8n community nodes documentation](https://docs.n8n.io/integrations/community-nodes/)
-- [TaskPano API documentation](https://app.taskpano.com/api/docs)
+- [TaskPano API documentation](https://app.taskpano.com/docs/api)
 - [TaskPano website](https://taskpano.com)
 
 ## License

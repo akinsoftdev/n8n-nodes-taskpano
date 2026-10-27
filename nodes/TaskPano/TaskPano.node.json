@@ -6,12 +6,12 @@
 	"resources": {
 		"credentialDocumentation": [
 			{
-				"url": "https://app.taskpano.com/api/docs#authentication"
+				"url": "https://app.taskpano.com/docs/api#authentication"
 			}
 		],
 		"primaryDocumentation": [
 			{
-				"url": "https://app.taskpano.com/api/docs"
+				"url": "https://app.taskpano.com/docs/api"
 			}
 		]
 	}
