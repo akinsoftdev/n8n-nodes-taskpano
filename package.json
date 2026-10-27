@@ -17,10 +17,6 @@
     "type": "git",
     "url": "https://github.com/akinsoftdev/n8n-nodes-taskpano.git"
   },
-  "engines": {
-    "node": ">=20.15"
-  },
-  "main": "index.js",
   "scripts": {
     "build": "n8n-node build",
     "build:watch": "tsc --watch",
