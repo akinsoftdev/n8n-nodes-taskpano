@@ -14,8 +14,7 @@ export async function loadLists(this: ILoadOptionsFunctions, filter?: string): P
 	let organizationId: string | undefined;
 
 	if (operation === 'create') {
-		const options = this.getCurrentNodeParameter('createTaskOptions') as IDataObject;
-		projectId = options?.projectId as string;
+		projectId = this.getCurrentNodeParameter('projectHash') as string;
 	} else {
 		const options = this.getCurrentNodeParameter('taskOptions') as IDataObject;
 		organizationId = options?.organizationId as string;
