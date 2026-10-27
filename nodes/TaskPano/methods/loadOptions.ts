@@ -272,3 +272,87 @@ export async function getFoldersForFilters(this: ILoadOptionsFunctions): Promise
 }
 
 export { loadTasks as getTasks };
+
+export async function getManualTasks(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+	const projectHash = this.getCurrentNodeParameter('projectHash') as string;
+
+	if (!projectHash) {
+		return [];
+	}
+
+	try {
+		const response = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/getManualRepeatitiveTasks`) as { data: { manualRepeatitiveTasks?: IDataObject[] } };
+
+		const manualTasks = response.data?.manualRepeatitiveTasks ?? [];
+
+		return manualTasks.map((manualTask: IDataObject) => ({
+			name: manualTask.subject as string,
+			value: manualTask.id as string,
+		}));
+	} catch (error) {
+		throw new NodeOperationError(this.getNode(), `Failed to load templates: ${error.message}`);
+	}
+}
+
+export async function getProjectAssignees(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+	const projectHash = this.getCurrentNodeParameter('projectHash') as string;
+
+	if (!projectHash) {
+		return [];
+	}
+
+	try {
+		const response = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/assignees`) as { data: { projectAssignees?: IDataObject[] } };
+
+		const projectAssignees = response.data?.projectAssignees ?? [];
+
+		return projectAssignees.map((user: IDataObject) => ({
+			name: user.name as string,
+			value: user.id as string,
+		}));
+	} catch (error) {
+		throw new NodeOperationError(this.getNode(), `Failed to load users: ${error.message}`);
+	}
+}
+
+export async function getProjectTags(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+	const projectHash = this.getCurrentNodeParameter('projectHash') as string;
+
+	if (!projectHash) {
+		return [];
+	}
+
+	try {
+		const response = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/tags`) as { data: { tags?: IDataObject[] } };
+
+		const tags = response.data?.tags ?? [];
+
+		return tags.map((tag: IDataObject) => ({
+			name: tag.name as string,
+			value: tag.id as string,
+		}));
+	} catch (error) {
+		throw new NodeOperationError(this.getNode(), `Failed to load tags: ${error.message}`);
+	}
+}
+
+export async function getProjectCustomFields(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+	const projectHash = this.getCurrentNodeParameter('projectHash') as string;
+
+	if (!projectHash) {
+		return [];
+	}
+
+	try {
+		const response = await taskPanoApiRequest.call(this, 'GET', `/projects/${projectHash}/custom-fields`) as { data?: IDataObject[] };
+
+		const customFields = response.data ?? [];
+
+		return customFields.map((field: IDataObject) => ({
+			name: `${field.name as string} (${field.type as string})${field.is_required ? ' *' : ''}`,
+			value: field.id as string,
+		}));
+	} catch (error) {
+		throw new NodeOperationError(this.getNode(), `Failed to load custom fields: ${error.message}`);
+	}
+}
